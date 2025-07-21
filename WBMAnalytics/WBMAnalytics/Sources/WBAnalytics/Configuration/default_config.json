@@ -1,0 +1,19 @@
+{
+  "analyticsURL": "https://a.wb.ru/m/batch",
+  "batch": {
+    "sendingDelay": 2,
+    "size": 200,
+    "sendingTimerTimeout": 10,
+    "requestTimeout": 30
+  },
+  "batchSize": {
+    "bytesInKb": 1024,
+    "maxBatchSizeInKbs": 512
+  },
+  "userEngagement": {
+    "timerInterval": 30
+  },
+  "fileLogger": {
+      "maxFileSize": 5242880
+  }
+}

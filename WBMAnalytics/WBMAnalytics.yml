@@ -1,0 +1,178 @@
+attributes:
+  BuildIndependentTargetsInParallel: '1'
+  LastSwiftUpdateCheck: '1500'
+  LastUpgradeCheck: '1500'
+  ORGANIZATIONNAME: Wildberries LLC
+
+name: WBMAnalytics
+options:
+  defaultConfig: Release
+  groupSortPosition: top
+  transitivelyLinkDependencies: false
+
+schemes:
+  WBMAnalytics:
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+    build:
+      targets:
+        WBMAnalytics:
+        - running
+        - testing
+        - profiling
+        - analyzing
+        - archiving
+    profile:
+      config: Release
+    run:
+      config: Debug
+
+  WBMAnalyticsTestApp:
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+    build:
+      targets:
+        WBMAnalyticsTestApp:
+        - running
+        - testing
+        - profiling
+        - analyzing
+        - archiving
+    profile:
+      config: Release
+    run:
+      config: Debug
+
+  WBMAnalyticsTests:
+      analyze:
+        config: Debug
+      archive:
+        config: Release
+      build:
+        targets:
+          WBMAnalyticsTests:
+          - running
+          - testing
+      test:
+        targets:
+          - WBMAnalyticsTests
+      profile:
+        config: Release
+      run:
+        config: Debug
+
+
+settings:
+  configs:
+    Debug:
+      CLANG_CXX_LANGUAGE_STANDARD: gnu++17
+      CURRENT_PROJECT_VERSION: '1'
+      IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+      MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
+      MTL_FAST_MATH: 'YES'
+      SDKROOT: iphoneos
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      SWIFT_OPTIMIZATION_LEVEL: -Onone
+      VERSIONING_SYSTEM: apple-generic
+      VERSION_INFO_PREFIX: ''
+    Release:
+      CLANG_CXX_LANGUAGE_STANDARD: gnu++17
+      CURRENT_PROJECT_VERSION: '1'
+      IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+      MTL_FAST_MATH: 'YES'
+      SDKROOT: iphoneos
+      SWIFT_COMPILATION_MODE: wholemodule
+      SWIFT_OPTIMIZATION_LEVEL: -O
+      VERSIONING_SYSTEM: apple-generic
+      VERSION_INFO_PREFIX: ''
+
+configs:
+  Debug: debug
+  Release: release
+
+targets:
+  WBMAnalytics:
+    postCompileScripts:
+        - script: |
+            if [[ "$(uname -m)" == arm64 ]]; then
+                export PATH="/opt/homebrew/bin:$PATH"
+            fi
+
+            if which swiftlint > /dev/null; then
+                swiftlint
+            else
+                brew install swiftlint
+            fi
+          name: Swiftlint
+          basedOnDependencyAnalysis: false
+    platform: iOS
+    settings:
+      configs:
+        Debug:
+          CODE_SIGN_STYLE: Automatic
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          INFOPLIST_KEY_NSHumanReadableCopyright: ''
+          IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WBMAnalytics.WBMAnalytics
+          SWIFT_EMIT_LOC_STRINGS: 'YES'
+          SWIFT_VERSION: '5.0'
+        Release:
+          CODE_SIGN_STYLE: Automatic
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          INFOPLIST_KEY_NSHumanReadableCopyright: ''
+          IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WBMAnalytics.WBMAnalytics
+          SWIFT_EMIT_LOC_STRINGS: 'YES'
+          SWIFT_VERSION: '5.0'
+    sources:
+    - name: WBMAnalytics
+      path: WBMAnalytics
+    type: framework
+
+  WBMAnalyticsTests:
+    dependencies:
+    - target: WBMAnalytics
+    platform: iOS
+    sources:
+    - name: WBMAnalyticsTests
+      path: WBMAnalyticsTests
+    type: bundle.unit-test
+    
+  WBMAnalyticsTestApp:
+    dependencies:
+    - target: WBMAnalytics
+    platform: iOS
+    settings:
+      configs:
+        Debug:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WBMAnalytics.WBMAnalyticsTestApp
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+        Release:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WBMAnalytics.WBMAnalyticsTestApp
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+    sources:
+    - name: WBMAnalyticsTestApp
+      path: WBMAnalyticsTestApp
+    type: application

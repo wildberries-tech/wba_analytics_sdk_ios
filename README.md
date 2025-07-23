@@ -7,7 +7,7 @@ SDK для логирования событий в IOS-приложении. С
 SDK поставляется через SPM, для добавления в свой проект достаточно добавить в свой проект 
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "3.4.3")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "3.4.4")
 ```
 
 ## 🚀 Launch in app

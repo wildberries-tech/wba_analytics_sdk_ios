@@ -8,20 +8,40 @@ protocol AttributionStorageProtocol {
     func save(_ response: AttributionData)
     /// Loads attribution if available
     func load() -> AttributionData?
+
+    /// Save a status that attribution was requested
+    func saveAtrributionDidRequested()
+
+    /// Check if the attribution was requested
+    func isAtrributionDidRequested() -> Bool
 }
 
 /// Implementation of attribution storage using UserDefaults
 final class UserDefaultsAttributionStorage: AttributionStorageProtocol {
 
-    private let key = "ru.wba.deviceFingerprint.attribution"
+    private enum Keys {
+        static let attribution = "ru.wba.deviceFingerprint.attribution"
+        static let attributionDidRequested = "ru.wba.deviceFingerprint.attributionDidRequested"
+    }
+
 
     func save(_ response: AttributionData) {
+        saveAtrributionDidRequested()
         if let data = try? JSONEncoder().encode(response) {
-            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.set(data, forKey: Keys.attribution)
         }
     }
+
     func load() -> AttributionData? {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        guard let data = UserDefaults.standard.data(forKey: Keys.attribution) else { return nil }
         return try? JSONDecoder().decode(AttributionData.self, from: data)
+    }
+
+    func saveAtrributionDidRequested() {
+        UserDefaults.standard.set(true, forKey: Keys.attributionDidRequested)
+    }
+
+    func isAtrributionDidRequested() -> Bool {
+        UserDefaults.standard.bool(forKey: Keys.attributionDidRequested)
     }
 }

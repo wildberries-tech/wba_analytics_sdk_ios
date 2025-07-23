@@ -35,7 +35,7 @@ final class DeviceFingerprintService {
         attributionQueue.async { [weak self] in
             guard let self = self else { return }
 
-            if self.storage.load() != nil {
+            if self.storage.isAtrributionDidRequested() {
                 self.logger.info("DeviceFingerprintService", "Attribution already saved on disk, repeated request is not performed.")
                 DispatchQueue.main.async {
                     completion(.success(nil))
@@ -48,7 +48,11 @@ final class DeviceFingerprintService {
             self.sendAttributionRequest(fingerprint) { [weak self] result in
                 if case .success(let response) = result, let response {
                     self?.storage.save(response)
-                    self?.logger.info("DeviceFingerprintService", "Attribution successfully saved to disk.")
+                    if response.isEmpty {
+                        self?.logger.info("DeviceFingerprintService", "Attribution not found, isEmpty == true")
+                    } else {
+                        self?.logger.info("DeviceFingerprintService", "Attribution successfully saved to disk.")
+                    }
                 }
                 DispatchQueue.main.async {
                     completion(result)
@@ -78,7 +82,7 @@ final class DeviceFingerprintService {
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 404 {
                 self.logger.debug("DeviceFingerprintService", "Fingerprint not found")
-                completion(.success(nil))
+                completion(.success(AttributionData.empty))
                 return
             }
 

@@ -4,6 +4,10 @@ import Foundation
 
 /// Attribution server response model
 public struct AttributionData: Codable {
+
+    /// Is attribution empty
+    public let isEmpty: Bool
+
     /// counter ID
     public let counterId: String?
     /// Link to follow after installation
@@ -14,9 +18,11 @@ public struct AttributionData: Codable {
     enum CodingKeys: String, CodingKey {
         case counterId
         case link
+        case isEmpty
     }
 
     init(
+        isEmpty: Bool,
         counterId: String?,
         link: String?,
         parameters: [String: String]?
@@ -24,7 +30,10 @@ public struct AttributionData: Codable {
         self.counterId = counterId
         self.link = link
         self.parameters = parameters
+        self.isEmpty = isEmpty
     }
+
+    static let empty: AttributionData = .init(isEmpty: true, counterId: nil, link: nil, parameters: nil)
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -34,17 +43,19 @@ public struct AttributionData: Codable {
         var parametersDict: [String: String] = [:]
         for key in all.allKeys {
             if key.stringValue != CodingKeys.counterId.rawValue {
-                let value = try all.decode(String.self, forKey: key)
+                let value = try all.decodeIfPresent(String.self, forKey: key)
                 parametersDict[key.stringValue] = value
             }
         }
         parameters = parametersDict.isEmpty ? nil : parametersDict
+        isEmpty = counterId == nil
     }
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(counterId, forKey: .counterId)
         try container.encodeIfPresent(link, forKey: .link)
+        try container.encodeIfPresent(isEmpty, forKey: .isEmpty)
         if let parameters = parameters {
             var dynamicContainer = encoder.container(keyedBy: DynamicCodingKeys.self)
             for (key, value) in parameters {

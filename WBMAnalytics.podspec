@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name                     = "WBMAnalytics"
-  spec.version                  = "3.4.3"
+  spec.version                  = "3.4.4"
   spec.summary                  = "SDK for logging events"
   spec.description              = "SDK for logging events"
 

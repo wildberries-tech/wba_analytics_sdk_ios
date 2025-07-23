@@ -17,9 +17,9 @@ final class AttributionDataTests: XCTestCase {
         {
             "counterId": "12345",
             "link": "https://example.com",
-            "utm_source": ["google"],
-            "utm_medium": ["cpc"],
-            "custom_param": ["value1", "value2"]
+            "utm_source": "google",
+            "utm_medium": "cpc",
+            "custom_param": "value1"
         }
         """.data(using: .utf8)!
         
@@ -29,9 +29,9 @@ final class AttributionDataTests: XCTestCase {
         // Then
         XCTAssertEqual(attribution.counterId, "12345")
         XCTAssertEqual(attribution.link, "https://example.com")
-        XCTAssertEqual(attribution.parameters?["utm_source"], ["google"])
-        XCTAssertEqual(attribution.parameters?["utm_medium"], ["cpc"])
-        XCTAssertEqual(attribution.parameters?["custom_param"], ["value1", "value2"])
+        XCTAssertEqual(attribution.parameters?["utm_source"], "google")
+        XCTAssertEqual(attribution.parameters?["utm_medium"], "cpc")
+        XCTAssertEqual(attribution.parameters?["custom_param"], "value1")
     }
     
     func testAttributionDataDecodingWithOnlyRequiredFields() throws {
@@ -49,7 +49,7 @@ final class AttributionDataTests: XCTestCase {
         // Then
         XCTAssertEqual(attribution.counterId, "67890")
         XCTAssertEqual(attribution.link, "https://test.com")
-        XCTAssertNil(attribution.parameters)
+        XCTAssertEqual(attribution.parameters?["link"], "https://test.com")
     }
     
     func testAttributionDataDecodingWithNullFields() throws {
@@ -58,7 +58,7 @@ final class AttributionDataTests: XCTestCase {
         {
             "counterId": null,
             "link": null,
-            "utm_campaign": ["summer2024"]
+            "utm_campaign": "summer2024"
         }
         """.data(using: .utf8)!
         
@@ -68,7 +68,7 @@ final class AttributionDataTests: XCTestCase {
         // Then
         XCTAssertNil(attribution.counterId)
         XCTAssertNil(attribution.link)
-        XCTAssertEqual(attribution.parameters?["utm_campaign"], ["summer2024"])
+        XCTAssertEqual(attribution.parameters?["utm_campaign"], "summer2024")
     }
     
     func testAttributionDataDecodingEmptyObject() throws {
@@ -203,9 +203,10 @@ final class UserDefaultsAttributionStorageTests: XCTestCase {
     func testSaveAndLoadAttribution() {
         // Given
         let attribution = AttributionData(
+            isEmpty: false,
             counterId: "123",
             link: "https://test.com",
-            parameters: ["utm_source": ["test"]]
+            parameters: ["utm_source": "test"]
         )
         
         // When
@@ -216,7 +217,7 @@ final class UserDefaultsAttributionStorageTests: XCTestCase {
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.counterId, "123")
         XCTAssertEqual(loaded?.link, "https://test.com")
-        XCTAssertEqual(loaded?.parameters?["utm_source"], ["test"])
+        XCTAssertEqual(loaded?.parameters?["utm_source"], "test")
     }
     
     func testLoadWhenNoDataSaved() {
@@ -229,9 +230,9 @@ final class UserDefaultsAttributionStorageTests: XCTestCase {
     
     func testSaveOverwritesPreviousData() {
         // Given
-        let firstAttribution = AttributionData(counterId: "111", link: "https://first.com", parameters: nil)
-        let secondAttribution = AttributionData(counterId: "222", link: "https://second.com", parameters: nil)
-        
+        let firstAttribution = AttributionData(isEmpty: false, counterId: "111", link: "https://first.com", parameters: nil)
+        let secondAttribution = AttributionData(isEmpty: false, counterId: "222", link: "https://second.com", parameters: nil)
+
         // When
         sut.save(firstAttribution)
         sut.save(secondAttribution)
@@ -274,7 +275,7 @@ final class DeviceFingerprintServiceTests: XCTestCase {
     
     func testCheckAttributionWhenAlreadySaved() {
         // Given
-        let existingAttribution = AttributionData(counterId: "existing", link: nil, parameters: nil)
+        let existingAttribution = AttributionData(isEmpty: true, counterId: "existing", link: nil, parameters: nil)
         storageMock.attributionData = existingAttribution
         let expectation = expectation(description: "Attribution check completion")
         
@@ -335,10 +336,14 @@ final class DeviceFingerprintCollectorMock: DeviceFingerprintCollector {
 }
 
 final class AttributionStorageMock: AttributionStorageProtocol {
+
+    
     var attributionData: AttributionData?
     var saveCallCount = 0
     var loadCallCount = 0
-    
+    var saveAtrributionDidRequestedCallCount = 0
+    var loadAtrributionDidRequestedCallCount = 0
+
     func save(_ response: AttributionData) {
         saveCallCount += 1
         attributionData = response
@@ -347,5 +352,14 @@ final class AttributionStorageMock: AttributionStorageProtocol {
     func load() -> AttributionData? {
         loadCallCount += 1
         return attributionData
+    }
+
+    func saveAtrributionDidRequested() {
+        saveAtrributionDidRequestedCallCount += 1
+    }
+
+    func isAtrributionDidRequested() -> Bool {
+        loadCallCount += 1
+        return loadCallCount > 0
     }
 }

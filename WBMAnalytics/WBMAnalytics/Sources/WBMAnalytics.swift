@@ -107,11 +107,6 @@ public final class WBMAnalytics {
             $0.setUserToken(token)
         }
     }
-
-    public func checkAttribution(completion: ((Result<AttributionData?, Error>) -> Void)? = nil) {
-        receivers.values.forEach({ $0.checkAttribution(completion: completion) })
-    }
-
 }
 
 public enum AnalyticsError: Error {

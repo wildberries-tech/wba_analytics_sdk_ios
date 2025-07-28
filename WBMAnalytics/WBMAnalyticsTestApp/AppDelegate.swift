@@ -20,17 +20,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         setupAnalytics()
 
-        // Тестовая интеграция WBTracker.checkAttribution
-        analytics1.checkAttribution { result in
-            switch result {
-            case .success(let response):
-                guard let response else { return }
-                print("[Attribution] Success: \(response)")
-            case .failure(let error):
-                print("[Attribution] Error: \(error)")
-            }
-        }
-
         window = UIWindow()
         window?.rootViewController = TestableViewController(testableViewIdentifier: "")
         window?.makeKeyAndVisible()
@@ -41,21 +30,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let isFirstLaunch = !UserDefaults.standard.bool(forKey: "isFirstLaunch")
 
         let url = URL(string: "https://a.wb.ru/m/batch")!
-        let apiKey = "<apiKey1>"
+        let apiKey = "ZAAAAAAAAAA="
 
         let reciever1 = WBAnalyticsReceiver(
             apiKey: apiKey,
             analyticsURL: url,
             isFirstLaunch: isFirstLaunch,
+            enableAttributionTracking: true,
             loggingOptions: .init(loggingEnabled: true, logRequests: true, logToFile: true, level: .debug),
             networkTypeProvider: NetworkTypeProviderMock(),
-            batchConfig: BatchConfig()
+            batchConfig: BatchConfig(),
+            delegate: self
         )
 
         reciever1.setup()
         analytics1.registerReceiver(reciever1)
 
-        let apiKey2 = "<apiKey2>"
+        let apiKey2 = "hAMAAAAAAAA="
         let reciever2 = WBAnalyticsReceiver(
             apiKey: apiKey2,
             analyticsURL: url,
@@ -67,7 +58,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         reciever2.setup()
         analytics2.registerReceiver(reciever2)
-
         analytics1.setUserToken("TEST TOKEN")
     }
 }
@@ -76,5 +66,11 @@ struct NetworkTypeProviderMock: NetworkTypeProviderProtocol {
 
     func getCurrentNetworkType() -> WBMNetworkType {
         .wifi
+    }
+}
+
+extension AppDelegate: WBAnalyticsDelegateProtocol {
+    func didResolveAttributedLink(_ link: URL) {
+        print("[Attribution] RESOLVED LINK: \(link)")
     }
 }

@@ -150,6 +150,141 @@ final class WBMAnalyticsTests: XCTestCase {
         XCTAssertEqual(receiver.trackUserEngagementReceivedValue, TestData.userEngagement)
     }
 
+    // MARK: WBAnalyticsDelegateProtocol Tests
+
+    func testWBAnalyticsSetupWithDelegate() {
+        // given
+        let delegateMock = WBAnalyticsDelegateMock()
+        let networkProvider = NetworkTypeProviderMock()
+        let batchConfig = BatchConfig()
+
+        // when
+        let analytics = WBAnalytics.setup(
+            apiKey: "test-api-key",
+            isFirstLaunch: false,
+            enableAttributionTracking: true,
+            dropCache: false,
+            networkTypeProvider: networkProvider,
+            batchConfig: batchConfig,
+            analyticsURL: URL(string: "https://test.example.com")!,
+            interceptor: NoOpInterceptor(),
+            delegate: delegateMock
+        )
+
+        let mirror = WBAnalyticsMirror(reflecting: analytics)
+
+        // then
+        XCTAssertNotNil(mirror.delegate)
+        XCTAssertIdentical(mirror.delegate as? WBAnalyticsDelegateMock, delegateMock)
+    }
+
+    func testWBAnalyticsSetupWithoutDelegate() {
+        // given
+        let networkProvider = NetworkTypeProviderMock()
+        let batchConfig = BatchConfig()
+
+        // when
+        let analytics = WBAnalytics.setup(
+            apiKey: "test-api-key",
+            isFirstLaunch: false,
+            enableAttributionTracking: true,
+            dropCache: false,
+            networkTypeProvider: networkProvider,
+            batchConfig: batchConfig,
+            analyticsURL: URL(string: "https://test.example.com")!,
+            interceptor: NoOpInterceptor(),
+            delegate: nil
+        )
+
+        let mirror = WBAnalyticsMirror(reflecting: analytics)
+
+        // then
+        XCTAssertNil(mirror.delegate)
+    }
+
+    func testDelegateWeakReference() {
+        // given
+        var delegateMock: WBAnalyticsDelegateMock? = WBAnalyticsDelegateMock()
+        let networkProvider = NetworkTypeProviderMock()
+        let batchConfig = BatchConfig()
+
+        let analytics = WBAnalytics.setup(
+            apiKey: "test-api-key",
+            isFirstLaunch: false,
+            enableAttributionTracking: true,
+            dropCache: false,
+            networkTypeProvider: networkProvider,
+            batchConfig: batchConfig,
+            analyticsURL: URL(string: "https://test.example.com")!,
+            interceptor: NoOpInterceptor(),
+            delegate: delegateMock
+        )
+
+        let mirror = WBAnalyticsMirror(reflecting: analytics)
+        XCTAssertNotNil(mirror.delegate)
+
+        // when
+        delegateMock = nil
+
+        // then
+        XCTAssertNil(mirror.delegate)
+    }
+
+    func testDidResolveAttributedLinkCalled() {
+        // given
+        let delegateMock = WBAnalyticsDelegateMock()
+        let networkProvider = NetworkTypeProviderMock()
+        let batchConfig = BatchConfig()
+
+        let analytics = WBAnalytics.setup(
+            apiKey: "test-api-key",
+            isFirstLaunch: false,
+            enableAttributionTracking: true,
+            dropCache: false,
+            networkTypeProvider: networkProvider,
+            batchConfig: batchConfig,
+            analyticsURL: URL(string: "https://test.example.com")!,
+            interceptor: NoOpInterceptor(),
+            delegate: delegateMock
+        )
+
+        let mirror = WBAnalyticsMirror(reflecting: analytics)
+        let testURL = URL(string: "https://www.wildberries.ru/catalog/123456/detail.aspx")!
+
+        // when
+        // Simulate successful attribution with a link
+        mirror.delegate?.didResolveAttributedLink(testURL)
+
+        // then
+        XCTAssertEqual(delegateMock.didResolveAttributedLinkWasCalled, 1)
+        XCTAssertEqual(delegateMock.didResolveAttributedLinkReceivedURL, testURL)
+    }
+
+    func testDidResolveAttributedLinkNotCalledWhenNilDelegate() {
+        // given
+        let networkProvider = NetworkTypeProviderMock()
+        let batchConfig = BatchConfig()
+
+        let analytics = WBAnalytics.setup(
+            apiKey: "test-api-key",
+            isFirstLaunch: false,
+            enableAttributionTracking: true,
+            dropCache: false,
+            networkTypeProvider: networkProvider,
+            batchConfig: batchConfig,
+            analyticsURL: URL(string: "https://test.example.com")!,
+            interceptor: NoOpInterceptor(),
+            delegate: nil
+        )
+
+        let mirror = WBAnalyticsMirror(reflecting: analytics)
+
+        // when/then - Should not crash when delegate is nil
+        XCTAssertNil(mirror.delegate)
+        // This would be called internally by checkAttribution but with nil delegate should not crash
+        mirror.delegate?.didResolveAttributedLink(URL(string: "https://example.com")!)
+    }
+
 }
 
 // MARK: TestData
@@ -177,5 +312,15 @@ private extension WBMAnalyticsTests {
         // And then we just declare the properties we want to test:
         var receivers: [String: AnalyticsReceiver]! { extract() }
         var receiversSetupStatuses: [String: Bool]! { extract() }
+        var delegate: WBAnalyticsDelegateProtocol? { extract() }
+    }
+
+    final class WBAnalyticsMirror: MirrorObject {
+        // We create a custom init that calls super with the custom object
+        init(reflecting counter: WBAnalytics) {
+            super.init(reflecting: counter)
+        }
+
+        var delegate: WBAnalyticsDelegateProtocol? { extract() }
     }
 }

@@ -2,6 +2,14 @@
 
 import Foundation
 
+/// Public delegate of WBAnalytics
+public protocol WBAnalyticsDelegateProtocol: AnyObject {
+
+    /// Called when WB Tracker found an attributed deeplink that can be handled by the client
+    /// - Parameter link: URL
+    func didResolveAttributedLink(_ link: URL)
+}
+
 /// WBAnalytics provides functionalities for setting up analytics,
 /// logging events, viewing screens, logging launch URLs and accessing device ID.
 public class WBAnalytics {
@@ -45,6 +53,7 @@ public class WBAnalytics {
     private let apiKey: String
     private let analyticsURL: URL
     private let interceptor: RequestInterceptor
+    private weak var delegate: WBAnalyticsDelegateProtocol?
 
     static var loggingOptions: LoggingOptions = .default
 
@@ -63,13 +72,15 @@ public class WBAnalytics {
     public static func setup(
         apiKey: String,
         isFirstLaunch: Bool,
+        enableAttributionTracking: Bool,
         dropCache: Bool,
         networkTypeProvider: NetworkTypeProviderProtocol,
         queue: DispatchQueue? = nil,
         batchConfig: BatchConfig,
         analyticsURL: URL,
         interceptor: RequestInterceptor,
-        loggingOptions: LoggingOptions = .default
+        loggingOptions: LoggingOptions = .default,
+        delegate: WBAnalyticsDelegateProtocol? = nil
     ) -> WBAnalytics {
         let analytics = WBAnalytics(
             apiKey: apiKey,
@@ -87,6 +98,9 @@ public class WBAnalytics {
             enumerationCounter: UserDefaultsEnumerationCounter(),
             userEngagementTracker: nil
         )
+
+        analytics.delegate = delegate
+        analytics.checkAttribution()
         return analytics
     }
 
@@ -138,18 +152,24 @@ public class WBAnalytics {
     }
 
     /// Check possible attribution
-    public func checkAttribution(completion: ((Result<AttributionData?, Error>) -> Void)? = nil) {
+    private func checkAttribution() {
         attributionTracker.checkAttribution { [weak self] result in
             switch result {
             case .success(let data):
                 guard data != nil else { return }
-                let parameters = data?.parameters ?? [:]
+
+                // report install
+                let parameters = data?.parametersAsAny() ?? [:]
                 self?.reportInstall(parameters: parameters)
+
+                // resolve a link
+                if let link = data?.link, let url = URL(string: link) {
+                    self?.delegate?.didResolveAttributedLink(url)
+                }
             case .failure:
                 // do nothing with that
                 break
             }
-            completion?(result)
         }
     }
 }

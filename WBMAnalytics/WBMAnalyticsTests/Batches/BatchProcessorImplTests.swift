@@ -613,7 +613,7 @@ private extension BatchProcessorImplTests {
         static let appVersion = "16.0"
         static let model = "arm64"
         static let manufacturer = "Apple"
-        static let analyticsSdkVersion = "3.4.4"
+        static let analyticsSdkVersion = "3.5.0"
     }
 
     enum CustomError: Error {

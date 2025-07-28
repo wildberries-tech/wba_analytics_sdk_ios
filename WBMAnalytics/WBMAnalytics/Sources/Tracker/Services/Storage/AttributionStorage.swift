@@ -24,7 +24,6 @@ final class UserDefaultsAttributionStorage: AttributionStorageProtocol {
         static let attributionDidRequested = "ru.wba.deviceFingerprint.attributionDidRequested"
     }
 
-
     func save(_ response: AttributionData) {
         saveAtrributionDidRequested()
         if let data = try? JSONEncoder().encode(response) {

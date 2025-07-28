@@ -16,9 +16,10 @@ SDK поставляется через SPM, для добавления в св
 
 Для создания экземпляра WBAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
     
-- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
+- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL, на который будут отправляться аналитические данные.
-- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
+- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
+- **enableAttributionTracking:** Включение/выключение автоматической атрибуции трафика. 
 - **loggingOptions:** Настройки логирования, включая уровень логирования и файловую запись. [Подробнее](.Docs/LoggingOptions.md)
 - **networkTypeProvider:** Объект, предоставляющий информацию о текущем типе сети.
 - **batchConfig:** Конфигурация пакетной отправки данных.
@@ -126,48 +127,34 @@ service.trackEventWithCompletion(name: "eventName", parameters: ["key":"123"], r
 
 ### 5. Получение атрибуцированных данных
 
-SDK поддерживает возможность получения атрибуцированных данных:
+SDK поддерживает возможность получения атрибуцированных данных. Для этого нужно указать атрибут `enableAttributionTracking` = true при инициализации reciever, а также указать делегат:
 
-- `link`
-- набор кастомных параметров, которые есть в ссылках.
-
-Пример ссылки:
-
-```bash
-https://wildtracker.wb.ru/link?counterId=1&link=https://www.wildberries.ru/catalog/256870994/detail.aspx
-```
-
-При старте приложения нужно вызвать следующий код:
 
 ```swift
-analytics.checkAttribution { result in
-            switch result {
-            case .success(let response):
-                guard let response else { return }
-                // В этом месте мы получили данные атрибуции, с ними можно работать дальше
-                print("[Attribution] Success: \(response)")
-            case .failure(let error):
-                print("[Attribution] Error: \(error)")
-            }
-        }
+let reciever1 = WBAnalyticsReceiver(
+    apiKey: apiKey,
+    isFirstLaunch: isFirstLaunch,
+    enableAttributionTracking: true,
+    loggingOptions: loggingOptions,
+    networkTypeProvider: networkTypeProvider,
+    batchConfig: BatchConfig(),
+    delegate: self
+)
 ```
 
-Пример обработки отложенных диплинков через данную систему из маркетплейса:
+Структура делегата:
 
 ```swift
-analyticsService.checkAttribution { result in
-            switch result {
-            case .success(let data):
-                guard let data else { return }
-                guard let link = data.link, let url = URL(string: link) else { return }
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, completionHandler: nil)
-                }
-            case .failure(let error):
-                break
-            }
-        }
+public protocol WBAnalyticsDelegateProtocol: AnyObject {
+
+    /// Called when WB Tracker found an attributed deeplink that can be handled by the client
+    /// - Parameter link: URL
+    func didResolveAttributedLink(_ link: URL)
+}
+
 ```
+
+Метод делегата didResolveAttributedLink вызовется только если в атрибуцированных данных будет найдена ссылка. 
 
 
 ## 📝 F.A.Q

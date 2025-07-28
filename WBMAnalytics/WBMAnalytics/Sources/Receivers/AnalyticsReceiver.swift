@@ -34,10 +34,6 @@ public protocol AnalyticsReceiver {
     /// Set authenticated user token
     /// - Parameter token: Token
     func setUserToken(_ token: String?)
-
-    /// Check attribution
-    /// - Parameter completion: Completion block with result
-    func checkAttribution(completion: ((Result<AttributionData?, Error>) -> Void)?)
 }
 
 public extension AnalyticsReceiver {

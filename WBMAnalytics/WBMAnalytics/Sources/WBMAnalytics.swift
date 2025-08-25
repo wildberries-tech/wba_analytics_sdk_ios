@@ -1,6 +1,7 @@
 // Copyright © 2024 Wildberries. All rights reserved.
 
 import Foundation
+import UIKit
 
 public final class WBMAnalytics {
 
@@ -106,6 +107,10 @@ public final class WBMAnalytics {
         receivers.values.forEach {
             $0.setUserToken(token)
         }
+    }
+
+    public func showLogsViewController() -> UIViewController {
+        ReceiversListViewController(receivers: receivers)
     }
 }
 

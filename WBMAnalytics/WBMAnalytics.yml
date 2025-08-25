@@ -10,6 +10,10 @@ options:
   groupSortPosition: top
   transitivelyLinkDependencies: false
 
+packages:
+  WBMAnalytics:
+    path: ..
+
 schemes:
   WBMAnalytics:
     analyze:
@@ -47,6 +51,24 @@ schemes:
     run:
       config: Debug
 
+  WBMAnalyticsTestApp_tvOS:
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+    build:
+      targets:
+        WBMAnalyticsTestApp_tvOS:
+        - running
+        - testing
+        - profiling
+        - analyzing
+        - archiving
+    profile:
+      config: Release
+    run:
+      config: Debug
+
   WBMAnalyticsTests:
       analyze:
         config: Debug
@@ -60,6 +82,24 @@ schemes:
       test:
         targets:
           - WBMAnalyticsTests
+      profile:
+        config: Release
+      run:
+        config: Debug
+
+  WBMAnalyticsTests_tvOS:
+      analyze:
+        config: Debug
+      archive:
+        config: Release
+      build:
+        targets:
+          WBMAnalyticsTests_tvOS:
+          - running
+          - testing
+      test:
+        targets:
+          - WBMAnalyticsTests_tvOS
       profile:
         config: Release
       run:
@@ -109,8 +149,11 @@ targets:
             fi
           name: Swiftlint
           basedOnDependencyAnalysis: false
+    productName: WBMAnalytics
     platform: iOS
     settings:
+      base:
+        PRODUCT_MODULE_NAME: WBMAnalytics
       configs:
         Debug:
           CODE_SIGN_STYLE: Automatic
@@ -145,6 +188,18 @@ targets:
     - name: WBMAnalyticsTests
       path: WBMAnalyticsTests
     type: bundle.unit-test
+
+  WBMAnalyticsTests_tvOS:
+    dependencies:
+    - package: WBMAnalytics
+      product: WBMAnalytics
+    platform: tvOS
+    sources:
+    - name: WBMAnalyticsTests
+      path: WBMAnalyticsTests
+    type: bundle.unit-test
+
+  
     
   WBMAnalyticsTestApp:
     dependencies:
@@ -175,4 +230,44 @@ targets:
     sources:
     - name: WBMAnalyticsTestApp
       path: WBMAnalyticsTestApp
+    type: application
+
+  WBMAnalyticsTestApp_tvOS:
+    dependencies:
+    - package: WBMAnalytics
+      product: WBMAnalytics
+    platform: tvOS
+    settings:
+      configs:
+        Debug:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WBMAnalytics.WBMAnalyticsTestAppTV
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+          TVOS_DEPLOYMENT_TARGET: '13.0'
+          SDKROOT: appletvos
+          INFOPLIST_KEY_UILaunchStoryboardName: ''
+        Release:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WBMAnalytics.WBMAnalyticsTestAppTV
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+          TVOS_DEPLOYMENT_TARGET: '13.0'
+          SDKROOT: appletvos
+          INFOPLIST_KEY_UILaunchStoryboardName: ''
+    sources:
+    - name: WBMAnalyticsTestApp
+      path: WBMAnalyticsTestApp
+      excludes:
+      - Base.lproj/**
     type: application

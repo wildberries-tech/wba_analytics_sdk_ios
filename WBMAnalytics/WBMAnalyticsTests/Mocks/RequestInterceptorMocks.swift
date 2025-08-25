@@ -2,6 +2,7 @@
 //  Copyright © 2025 Wildberries LLC. All rights reserved.
 //
 
+import Foundation
 @testable import WBMAnalytics
 
 final class RequestInterceptorMock: RequestInterceptor {

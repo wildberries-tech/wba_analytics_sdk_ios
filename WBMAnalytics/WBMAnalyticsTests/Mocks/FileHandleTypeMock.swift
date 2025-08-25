@@ -8,6 +8,10 @@ import Foundation
 
 final class FileHandleTypeMock: FileHandleProtocol {
 
+    private(set) var closeFileWasCalled: Int = 0
+    func closeFile() {
+        closeFileWasCalled += 1
+    }
     static func reset() {
         FileHandleTypeMock.initErrorStub = nil
         initReceivedForWritingTo = nil

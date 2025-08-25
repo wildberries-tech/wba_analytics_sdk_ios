@@ -87,7 +87,7 @@ final class FileLogger: Logger {
     private func appendLogToFile(logMessage: String) {
         guard let fileHandle else { return }
         if let data = (logMessage + "\n").data(using: .utf8) {
-            if #available(iOS 13.4, *) {
+            if #available(iOS 13.4, tvOS 13.4, *) {
                 try? fileHandle.write(contentsOf: data)
             } else {
                 fileHandle.write(data)
@@ -106,14 +106,21 @@ extension FileLogger: LogFileHandling {
 
     func clearLogFile() {
         do {
+            // Закрываем старый файл, если открыт
+            fileHandle?.closeFile()
+
+            // Удаляем файл
             try fileManager.removeItem(at: fileURL)
+
+            // Создаём пустой файл
+            fileManager.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
+
+            // Переоткрываем fileHandle для нового файла
+            fileHandle = try fileHandleType.init(forWritingTo: fileURL)
+            fileHandle?.seekToEndOfFile()
+
         } catch {
-            logger.log(level: .error, label: Constants.logLabel, message: "failed to remove file at url: \(fileURL)")
+            logger.log(level: .error, label: Constants.logLabel, message: "failed to clear log file: \(error)")
         }
-        fileManager.createFile(
-            atPath: fileURL.path,
-            contents: nil,
-            attributes: nil
-        )
     }
 }

@@ -2,7 +2,6 @@
 
 import Foundation
 import UIKit
-import CoreTelephony
 import SystemConfiguration
 import AdSupport
 

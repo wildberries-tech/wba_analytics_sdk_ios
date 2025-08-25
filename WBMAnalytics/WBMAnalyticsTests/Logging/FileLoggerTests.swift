@@ -152,12 +152,15 @@ final class FileLoggerTests: XCTestCase {
         )
         WBAnalytics.loggingOptions = .init(loggingEnabled: true, logRequests: true, logToFile: true, level: .debug)
         fileManagerMock.createFileStub = true
+        let mirror = Mirror(reflecting: logger)
+        let fileHandleMock = mirror.fileHandle as? FileHandleTypeMock
         // when
         logger.log(level: .debug, label: TestData.label, message: TestData.message)
         sleep(milliseconds: 100)
         // then
         XCTAssertTrue(WBAnalytics.loggingOptions.loggingEnabled)
         XCTAssertTrue(WBAnalytics.loggingOptions.logToFile)
+        XCTAssertEqual(fileHandleMock?.closeFileWasCalled, 1)
         XCTAssertEqual(fileManagerMock.attributesOfItemWasCalled, 1)
         XCTAssertEqual(fileManagerMock.attributesOfItemReceivedAtPath, TestData.urlPathFull.description)
         XCTAssertEqual(fileManagerMock.removeItemAtWasCalled, 1)
@@ -193,18 +196,13 @@ final class FileLoggerTests: XCTestCase {
         // then
         XCTAssertEqual(fileManagerMock.removeItemAtWasCalled, 1)
         XCTAssertEqual(fileManagerMock.removeItemAtReceivedArguments, TestData.urlPathFull)
-        XCTAssertEqual(fileManagerMock.createFileWasCalled, 1)
-        if #available(iOS 16.0, *) {
-            XCTAssertEqual(fileManagerMock.createFileReceivedArguments?.atPath, TestData.urlPathFull.path())
-        } else {
-            XCTAssertEqual(fileManagerMock.createFileReceivedArguments?.atPath, "path/WBAnalytics.log")
-        }
+        XCTAssertEqual(fileManagerMock.createFileWasCalled, 0)
         XCTAssertNil(fileManagerMock.createFileReceivedArguments?.contents)
         XCTAssertNil(fileManagerMock.createFileReceivedArguments?.attributes)
         XCTAssertEqual(loggerMock.logWasCalled, 1)
         XCTAssertEqual(loggerMock.logReceivedLabel, TestData.logLabel)
         XCTAssertEqual(loggerMock.logReceivedLevel, .error)
-        XCTAssertEqual(loggerMock.logReceivedMessage, "failed to remove file at url: \(TestData.urlPathFull)")
+        XCTAssertEqual(loggerMock.logReceivedMessage, "failed to clear log file: \(CustomError.random)")
     }
 
     func testMaxFileSizeLog() {

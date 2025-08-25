@@ -1,6 +1,7 @@
 //  Copyright © 2021 Wildberries LLC. All rights reserved.
 
 import Foundation
+import UIKit
 
 /// AnalyticsReceiver is a protocol that defines the basic methods for analytics tracking.
 public protocol AnalyticsReceiver {
@@ -34,6 +35,8 @@ public protocol AnalyticsReceiver {
     /// Set authenticated user token
     /// - Parameter token: Token
     func setUserToken(_ token: String?)
+    /// Returns a view controller to display debug logs for this receiver.
+    func showLogScreen() -> UIViewController?
 }
 
 public extension AnalyticsReceiver {

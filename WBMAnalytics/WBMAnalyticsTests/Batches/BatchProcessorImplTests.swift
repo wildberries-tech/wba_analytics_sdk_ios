@@ -608,12 +608,16 @@ private extension BatchProcessorImplTests {
             "events": [event, eventTwo]
         ]
         static let batches: [String: Batch] = ["request1": batch]
+        #if os(tvOS)
+        static let product = "tvOS"
+        #else
         static let product = "iOS"
+        #endif
         static let appId = "com.apple.dt.xctest.tool"
         static let appVersion = "16.0"
         static let model = "arm64"
         static let manufacturer = "Apple"
-        static let analyticsSdkVersion = "3.5.0"
+        static let analyticsSdkVersion = "3.5.1"
     }
 
     enum CustomError: Error {

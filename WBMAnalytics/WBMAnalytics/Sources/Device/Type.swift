@@ -10,6 +10,7 @@ public enum Type: String {
     case iPhone
     case iPad
     case iPod
+    case appleTV
     case simulator
     case unknown
 }

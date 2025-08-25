@@ -29,6 +29,11 @@ open class Device {
 
     static fileprivate func getVersion(code: String) -> Version {
         switch code {
+            /*** Apple TV (tvOS) ***/
+            case "AppleTV5,3":                                return .appleTV4
+            case "AppleTV6,2":                                return .appleTV4K
+            case "AppleTV11,1":                               return .appleTV4K_2ndGen
+            case "AppleTV14,1":                               return .appleTV4K_3rdGen
             /*** iPhone ***/
             case "iPhone1,1":                                return .iPhone2G
             case "iPhone1,2":                                return .iPhone3G
@@ -150,6 +155,8 @@ open class Device {
             return .iPad
         } else if versionCode.contains("iPod") {
             return .iPod
+        } else if versionCode.contains("AppleTV") {
+            return .appleTV
         } else if versionCode == "i386" || versionCode == "x86_64" || versionCode == "arm64" {
             return .simulator
         } else {

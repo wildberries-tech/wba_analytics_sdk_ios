@@ -75,51 +75,19 @@ final class TestableViewController: UIViewController {
     }
 
     @objc private func addEventButtonTapped() {
-        AppDelegate.shared.analytics1.trackUserEngagement(UserEngagement(screenName: "Screen_name", textSize: nil), receiverIdentifier: "")
-        AppDelegate.shared.analytics1.trackEvent(name: "add_to_cart_test", parameters: [
-            "param1": "value1",
-            "param2": "param2"
-        ])
-
-        AppDelegate.shared.analytics2.trackEvent(name: "add_to_cart_test_2", parameters: [
-            "param1": "value1",
-            "param2": "param2"
-        ])
+        TestActions.addEvent()
     }
 
     @objc private func enableEventsendingButtonTapped() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            AppDelegate.shared.analytics1.trackEvent(name: "add_to_cart_test", parameters: [
-                "param1": "value1",
-                "param2": "param2"
-            ])
-            AppDelegate.shared.analytics2.trackEvent(name: "add_to_cart_test_2", parameters: [
-                "param1": "value1",
-                "param2": "param2"
-            ])
-        }
+        timer = TestActions.startEventTimer()
     }
 
     @objc private func sendSyncEvent() {
-        do {
-            try AppDelegate.shared.analytics2.trackEventWithCompletion(
-                name: "add_to_cart_fake",
-                parameters: [
-                    "card":"visa",
-                    "pay": 123
-                ],
-                completion: {
-                print("add_to_cart_fake send with result \($0)")
-            })
-        } catch {
-            print(error)
-        }
+        TestActions.sendSyncEvent()
     }
 
     @objc private func showLogsPanelButtonTapped() {
-//        let logVC = WBAnalytics.logViewController()
-//        let navVC = UINavigationController(rootViewController: logVC)
-//        present(navVC, animated: true)
+        TestActions.presentLogs(from: self)
     }
 }

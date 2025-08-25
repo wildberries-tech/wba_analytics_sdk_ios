@@ -32,6 +32,17 @@ public final class AnalyticsLogViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
 
+    init(apiKey: String) {
+        self.logFileHandling = {
+            let consoleLogger = ConsoleLogger(apiKey: apiKey)
+            return CompositeLogger(loggers: [
+                consoleLogger,
+                FileLogger(apiKey: apiKey, logger: consoleLogger),
+            ])
+        }()
+        super.init(nibName: nil, bundle: nil)
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -52,11 +63,11 @@ public final class AnalyticsLogViewController: UIViewController {
 
         navigationItem.title = "Analytics logs"
         navigationItem.rightBarButtonItems = [
-            UIBarButtonItem(
-                barButtonSystemItem: .trash,
-                target: self,
-                action: #selector(clearLogs)
-            ),
+//            UIBarButtonItem(
+//                barButtonSystemItem: .trash,
+//                target: self,
+//                action: #selector(clearLogs)
+//            ),
             UIBarButtonItem(
                 barButtonSystemItem: .action,
                 target: self,
@@ -103,9 +114,9 @@ public final class AnalyticsLogViewController: UIViewController {
         }
     }
 
-    @objc private func clearLogs() {
-        logFileHandling.clearLogFile()
-    }
+//    @objc private func clearLogs() {
+//        logFileHandling.clearLogFile()
+//    }
 
     @objc private func searchFieldDidChange() {
         applySearchFilter()
@@ -131,11 +142,24 @@ public final class AnalyticsLogViewController: UIViewController {
 
     @objc private func shareLogs() {
         guard let logFileURL = logFileHandling.logFileURL() else { return }
+
+        #if os(iOS)
         let activityViewController = UIActivityViewController(
             activityItems: [logFileURL],
             applicationActivities: nil
         )
         present(activityViewController, animated: true, completion: nil)
+
+        #elseif os(tvOS)
+        let alert = UIAlertController(
+            title: "Недоступно",
+            message: "Общий доступ к логам не поддерживается на tvOS.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "ОК", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
+
+        #endif
     }
 }
 

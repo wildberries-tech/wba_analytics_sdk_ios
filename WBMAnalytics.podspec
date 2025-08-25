@@ -1,16 +1,17 @@
 Pod::Spec.new do |spec|
   spec.name                     = "WBMAnalytics"
-  spec.version                  = "3.4.4"
+  spec.version                  = "3.5.1"
   spec.summary                  = "SDK for logging events"
   spec.description              = "SDK for logging events"
 
-  spec.homepage                 = "https://github.com/wildberries-tech/wba_analytics_sdk_ios"
+  spec.homepage                 = "https://gitlab.wildberries.ru/mobile/ios/analytics"
   spec.license                  = { :type => "MIT", :file => "LICENSE" }
   spec.author                   = { "Wildberries" => "mobile@wildberries.ru" }
-  spec.source                   = { :git => "https://github.com/wildberries-tech/wba_analytics_sdk_ios.git" }
+  spec.source                   = { :git => "https://gitlab.wildberries.ru/mobile/ios/analytics.git" }
 
   # Platform and deployment target
   spec.ios.deployment_target    = "13.0"
+  spec.tvos.deployment_target   = "13.0"
   spec.swift_version            = "5.7"
 
   # Source files
@@ -42,6 +43,6 @@ Pod::Spec.new do |spec|
   }
 
   # Documentation
-  spec.documentation_url        = "README.md"
+  spec.documentation_url        = "https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/README.md"
 
 end 

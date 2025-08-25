@@ -1,6 +1,7 @@
 //  Copyright © 2021 Wildberries LLC. All rights reserved.
 
 import Foundation
+import UIKit
 
 /// Configuration for WBAnalytics.
 public final class WBAnalyticsReceiver {
@@ -105,6 +106,12 @@ extension WBAnalyticsReceiver: AnalyticsCompletionReceiver {
     /// Tracks an event with a completion handler to indicate success or failure.
     public func trackEventWithCompletion(name: String, parameters: [String : Any]?, completion: @escaping (Bool) -> Void) {
         analyticsInstance?.logEvent(name, parameters: parameters, completion: completion)
+    }
+}
+
+public extension WBAnalyticsReceiver {
+    func showLogScreen() -> UIViewController? {
+        analyticsInstance?.logViewController()
     }
 }
 

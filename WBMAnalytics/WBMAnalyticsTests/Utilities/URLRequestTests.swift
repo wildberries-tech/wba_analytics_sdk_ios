@@ -3,6 +3,7 @@
 //
 
 import XCTest
+import Foundation
 
 @testable import WBMAnalytics
 

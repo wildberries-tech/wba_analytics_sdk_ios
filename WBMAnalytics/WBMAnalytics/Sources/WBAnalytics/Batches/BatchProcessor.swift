@@ -177,7 +177,8 @@ final class BatchProcessorImpl: BatchProcessor {
             }
         }
 
-        guard let batchData = try? jsonSerializer.data(withJSONObject: model.batch) else {
+        guard jsonSerializer.isValidJSONObject(model.batch),
+              let batchData = try? jsonSerializer.data(withJSONObject: model.batch) else {
             logger.error(Constants.logLabel, "failed to serialize batch with id: \(model.id)")
             completion(false)
             completed = true

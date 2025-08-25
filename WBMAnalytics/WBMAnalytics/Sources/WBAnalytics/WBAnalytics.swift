@@ -1,6 +1,7 @@
 // Copyright © 2021 Wildberries. All rights reserved.
 
 import Foundation
+import UIKit
 
 /// Public delegate of WBAnalytics
 public protocol WBAnalyticsDelegateProtocol: AnyObject {
@@ -149,6 +150,11 @@ public class WBAnalytics {
     /// Send app_install
     public func reportInstall(parameters: [String: Any]? = nil) {
         processor.addEvent("app_install", parameters: parameters)
+    }
+
+    /// Show logs
+    public static func logsViewController(apiKeys: [String]) -> UIViewController {
+        ReceiversListViewController(apiKeys: apiKeys)
     }
 
     /// Check possible attribution

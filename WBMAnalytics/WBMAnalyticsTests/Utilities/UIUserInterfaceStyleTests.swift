@@ -3,6 +3,7 @@
 //
 
 import XCTest
+import UIKit
 
 @testable import WBMAnalytics
 

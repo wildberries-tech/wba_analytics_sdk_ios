@@ -3,9 +3,18 @@
 //
 
 import Foundation
+import UIKit
 @testable import WBMAnalytics
 
 final class AnalyticsReceiverMock: AnalyticsReceiver {
+
+    private(set) var showLogScreenWasCalled: Int = 0
+    var showLogScreenStub: UIViewController = UIViewController()
+
+    func showLogScreen() -> UIViewController? {
+        showLogScreenWasCalled += 1
+        return showLogScreenStub
+    }
 
     private(set) var identifierWasCalled: Int = 0
     var identifierStub: String!

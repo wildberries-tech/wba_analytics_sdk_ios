@@ -100,11 +100,15 @@ private extension MetaTests {
     enum TestData {
         static let networkType: WBMNetworkType = .cellular3G
         static let deviceID: String = "1234"
-        static let product: String = "iOS"
+#if os(tvOS)
+        static let product = "tvOS"
+#else
+        static let product = "iOS"
+#endif
         static let systemVersion: String = "17.2"
         static let appID: String = "com.apple.dt.xctest.tool"
         static let appVersion: String = "16.0"
-        static let analyticsSDKVersion: String = "3.5.0"
+        static let analyticsSDKVersion: String = "3.5.1"
         static let deviceType: String = "computer"
         static let manufacturer: String = "Apple"
         static let model: String = "arm64"

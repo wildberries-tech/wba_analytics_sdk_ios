@@ -117,6 +117,12 @@ public enum Version: String {
 
     /*** unknown ***/
     case unknown
+
+    /*** tvOS (Apple TV) ***/
+    case appleTV4
+    case appleTV4K
+    case appleTV4K_2ndGen
+    case appleTV4K_3rdGen
 }
 
 // MARK: - Physical Size
@@ -124,6 +130,11 @@ extension Version {
     /// Physical screen size in pixels
     public var physicalSize: CGSize {
         switch self {
+        // Apple TV models (logical points mapped to typical pixel dimensions)
+        case .appleTV4:
+            return CGSize(width: 1920, height: 1080)
+        case .appleTV4K, .appleTV4K_2ndGen, .appleTV4K_3rdGen:
+            return CGSize(width: 3840, height: 2160)
         // iPhone models
         case .iPhone2G:
             return CGSize(width: 320, height: 480)

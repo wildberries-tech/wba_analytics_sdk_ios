@@ -82,7 +82,8 @@ final class UserDefaultsStorageImpl: UserDefaultsStorage {
     func save(batches: [BatchModel]) throws {
          logger.debug(Constants.logLabel, "save batches: \(batches), count: \(batches.count)")
          let batchesJson = batches.reduce(into: [String: Batch]()) { $0[$1.id] = $1.batch }
-         guard let data = try? jsonSerializer.data(withJSONObject: batchesJson) else {
+         guard jsonSerializer.isValidJSONObject(batchesJson),
+               let data = try? jsonSerializer.data(withJSONObject: batchesJson) else {
              logger.error(
                  Constants.logLabel,
                  "failed to serialize batches: \(batchesJson), count: \(batchesJson.count)"

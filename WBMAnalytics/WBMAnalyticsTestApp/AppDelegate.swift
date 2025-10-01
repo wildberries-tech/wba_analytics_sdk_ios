@@ -21,7 +21,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private func setupAnalytics() {
         let isFirstLaunch = !UserDefaults.standard.bool(forKey: "isFirstLaunch")
-        let url = URL(string: "https://a.wb.ru/m/batch")!
+        let url = URL(string: "https://wba.wb.ru/m/batch")!
         let apiKey = "TestApiKey1"
         let reciever1 = WBAnalyticsReceiver(
             apiKey: apiKey,
@@ -76,7 +76,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private func setupAnalytics() {
         let isFirstLaunch = !UserDefaults.standard.bool(forKey: "isFirstLaunch")
 
-        let url = URL(string: "https://a.wb.ru/m/batch")!
+        let url = URL(string: "https://wba.wb.ru/m/batch")!
         let apiKey = "TestApiKey1"
 
         let reciever1 = WBAnalyticsReceiver(

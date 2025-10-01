@@ -499,9 +499,9 @@ final class EventsProcessorImplTests: XCTestCase {
         )
         let mirror = Mirror(reflecting: processor)
         // when
-        sleep(milliseconds: 500)
+        sleep(milliseconds: 1000)
         processor.logLaunchURL(TestData.url)
-        sleep(milliseconds: 500)
+        sleep(milliseconds: 1000)
             // then
         XCTAssertEqual(mirror.events[1]["name"] as? String, "dynamic_link_app_open")
         XCTAssertEqual(
@@ -651,12 +651,23 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["text_size"] as? Int, 2)
     }
 
+    // MARK: set device id
+
+    func testSetDeviceId() {
+        // when
+        processor.setDeviceId(TestData.deviceId)
+        // then
+        XCTAssertEqual(batchProcessorMock.setDeviceIdWasCalled, 1)
+        XCTAssertEqual(batchProcessorMock.setDeviceReceivedArguments, TestData.deviceId)
+    }
+
 }
 
 // MARK: TestData
 
 private extension EventsProcessorImplTests {
     enum TestData {
+        static let deviceId = "deviceId"
         static let userEngagement: UserEngagement = .init(screenName: "event", textSize: .small)
         static let url = URL(string: "https://example.com")!
         static let event: Event = .init(meta: ["Meta": 123], batchNum: 0, events: [["name":321]])

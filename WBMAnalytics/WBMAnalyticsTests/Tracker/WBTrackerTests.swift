@@ -397,6 +397,7 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         collectorMock = DeviceFingerprintCollectorMock()
         storageMock = AttributionStorageMock()
         sut = DeviceFingerprintService(
+            apiKey: "Test",
             collector: collectorMock,
             logger: CompositeLogger(loggers: [loggerMock]),
             storage: storageMock

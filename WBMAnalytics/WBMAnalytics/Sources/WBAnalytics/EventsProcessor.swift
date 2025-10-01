@@ -42,6 +42,8 @@ protocol EventsProcessor {
     /// Set authenticated user token
     /// - Parameter token: Token
     func setUserToken(_ token: String?)
+    /// Set device id
+    func setDeviceId(_ deviceId: String?)
 }
 
 final class EventsProcessorImpl: EventsProcessor {
@@ -160,6 +162,10 @@ final class EventsProcessorImpl: EventsProcessor {
 
     func setUserToken(_ token: String?) {
         batchProcessor.setUserToken(token)
+    }
+
+    func setDeviceId(_ deviceId: String?) {
+        batchProcessor.setDeviceId(deviceId)
     }
 
     func addEvent(_ event: String, parameters: [String: Any]? = nil) {

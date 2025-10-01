@@ -9,10 +9,14 @@ final class WBTracker {
 
     /// WBTracker initialization
     /// - Parameter logger: Logger for event logging
-    init(logger: CompositeLogger = CompositeLogger(loggers: [])) {
+    init(apiKey: String, logger: CompositeLogger = CompositeLogger(loggers: [])) {
         self.logger = logger
         let collector = DeviceFingerprintCollector()
-        self.deviceFingerprintService = DeviceFingerprintService(collector: collector, logger: logger)
+        self.deviceFingerprintService = DeviceFingerprintService(
+            apiKey: apiKey,
+            collector: collector,
+            logger: logger
+        )
     }
 
     /// Checks device attribution via fingerprint

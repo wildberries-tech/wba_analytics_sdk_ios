@@ -531,6 +531,26 @@ final class BatchProcessorImplTests: XCTestCase {
         XCTAssertEqual(storageMock.addBatchWasCalled, 1)
     }
 
+    func testAddBatchWithCustomDeviceId() {
+        // given
+        userStorageMock.loadBatchesStub = []
+        batchProcessor.setup(
+            batchSender: batchSenderMock,
+            queue: dispatchMock,
+            networkTypeProvider: networkProviderMock,
+            counter: counterMock,
+            batchWorker: batchWorkerMock
+        )
+        counterMock.incrementedCountStub = 0
+        // when
+        batchProcessor.setDeviceId(TestData.deviceId)
+        batchProcessor.addBatch(withEvents: [TestData.event])
+        let batches = storageMock.addBatchReceivedBatch
+        let meta = batches?["meta"] as? [String: Any]
+        // then
+        XCTAssertEqual(meta?["device_id"] as? String, TestData.deviceId)
+    }
+
     func testNoMemoryAddBatch() {
         // given
         let mirror = BatchProcessorImplMirror(reflecting: batchProcessor)
@@ -590,6 +610,17 @@ final class BatchProcessorImplTests: XCTestCase {
         // then
         XCTAssertFalse(mirror.isNewLaunch)
     }
+
+    // MARK: - Set device id
+
+    func testSetDeviceId() {
+        // given
+        let mirror = BatchProcessorImplMirror(reflecting: batchProcessor)
+        // when
+        batchProcessor.setDeviceId(TestData.deviceId)
+        // then
+        XCTAssertEqual(mirror.deviceId, TestData.deviceId)
+    }
 }
 
 // MARK: - TestData
@@ -599,6 +630,7 @@ private extension BatchProcessorImplTests {
         static let nextBatch = BatchModel(id: "123", batch: event)
         static let nextBatchTwoEvent = BatchModel(id: "123", batch: batchTwoEvents)
         static let queue = "queue"
+        static let deviceId = "deviceId"
         static let data = Data()
         static let dataMax = Data(repeating: 0, count: 513 * 1024)
         static let event: [String: Int] = ["event": 321]
@@ -617,7 +649,7 @@ private extension BatchProcessorImplTests {
         static let appVersion = "16.0"
         static let model = "arm64"
         static let manufacturer = "Apple"
-        static let analyticsSdkVersion = "3.5.1"
+        static let analyticsSdkVersion = "3.5.3"
     }
 
     enum CustomError: Error {
@@ -647,6 +679,7 @@ private extension BatchProcessorImplTests {
         var state: BatchProcessorImpl.BatchProcessingState { extract() }
 
         var isNewLaunch: Bool { extract() }
+        var deviceId: String? { extract() }
         var isSending: Bool { extract() }
         var isExecutingInBackground: Bool { extract() }
         var batchesBeingSentIds: Set<String> { extract() }

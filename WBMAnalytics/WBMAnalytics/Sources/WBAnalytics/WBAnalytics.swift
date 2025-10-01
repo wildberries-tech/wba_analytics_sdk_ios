@@ -48,7 +48,7 @@ public class WBAnalytics {
     lazy var configProvider: ConfigProvider = ConfigProvider(logger: logger)
 
     private lazy var attributionTracker: WBTracker = {
-        WBTracker(logger: logger)
+        WBTracker(apiKey: apiKey, logger: logger)
     }()
 
     private let apiKey: String
@@ -101,7 +101,10 @@ public class WBAnalytics {
         )
 
         analytics.delegate = delegate
-        analytics.checkAttribution()
+
+        if enableAttributionTracking {
+            analytics.checkAttribution()
+        }
         return analytics
     }
 
@@ -109,6 +112,10 @@ public class WBAnalytics {
     /// - Parameter token: Token
     public func setUserToken(_ token: String?) {
         processor.setUserToken(token)
+    }
+
+    public func setDeviceId(_ deviceId: String?) {
+        processor.setDeviceId(deviceId)
     }
 
     /// This function is used to set common parameters for the analytics.

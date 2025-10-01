@@ -16,6 +16,7 @@ protocol BatchProcessor {
     func addBatch(withEvents events: [Event])
     func sendEventSync(event: Event, completion: @escaping (_ successfully: Bool) -> Void)
     func setUserToken(_ token: String?)
+    func setDeviceId(_ deviceId: String?)
 }
 
 final class BatchProcessorImpl: BatchProcessor {
@@ -31,6 +32,7 @@ final class BatchProcessorImpl: BatchProcessor {
     private var queue: Dispatcher?
     private var batchWorker: BatchWorker?
     private var storage: Storage
+    private var deviceId: String?
     // default value
     private var batches: [BatchModel] = []
     private var isNewLaunch = false
@@ -103,6 +105,10 @@ final class BatchProcessorImpl: BatchProcessor {
 
     func setUserToken(_ token: String?) {
         batchSender?.setUserToken(token)
+    }
+
+    func setDeviceId(_ deviceId: String?) {
+        self.deviceId = deviceId
     }
 
     func sendEventSync(event: Event, completion: @escaping (_ successfully: Bool) -> Void) {
@@ -255,7 +261,7 @@ final class BatchProcessorImpl: BatchProcessor {
         let networkType = networkTypeProvider?.getCurrentNetworkType() ?? .other
         return Meta(
             networkType: networkType,
-            deviceId: WBAnalytics.deviceId,
+            deviceId: deviceId ?? WBAnalytics.deviceId,
             isNewUser: isNewLaunch
         )
     }

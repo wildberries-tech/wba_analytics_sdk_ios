@@ -11,6 +11,7 @@ final class DeviceFingerprintService {
     private let logger: CompositeLogger
     private let attributionQueue = DispatchQueue(label: "ru.wildberries.deviceFingerprint.attribution")
     private let storage: AttributionStorageProtocol
+    private let apiKey: String
 
     /// Private configuration parameters
     private enum Configuration {
@@ -19,10 +20,17 @@ final class DeviceFingerprintService {
 
     /// Service initialization
     /// - Parameters:
+    ///   - apiKey: API Key
     ///   - collector: Fingerprint collector (default is standard)
     ///   - logger: Logger (default is empty)
     ///   - storage: Attribution storage (default is UserDefaults)
-    init(collector: DeviceFingerprintCollector = DeviceFingerprintCollector(), logger: CompositeLogger = CompositeLogger(loggers: []), storage: AttributionStorageProtocol = UserDefaultsAttributionStorage()) {
+    init(
+        apiKey: String,
+        collector: DeviceFingerprintCollector = DeviceFingerprintCollector(),
+        logger: CompositeLogger = CompositeLogger(loggers: []),
+        storage: AttributionStorageProtocol = UserDefaultsAttributionStorage()
+    ) {
+        self.apiKey = apiKey
         self.collector = collector
         self.logger = logger
         self.storage = storage
@@ -69,6 +77,7 @@ final class DeviceFingerprintService {
         var request = URLRequest(url: Configuration.attributionURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue(apiKey, forHTTPHeaderField: "X-Api-Key")
 
         do {
             let data = try JSONEncoder().encode(fingerprint)
@@ -78,6 +87,8 @@ final class DeviceFingerprintService {
             completion(.failure(error))
             return
         }
+
+        self.logger.debug("DeviceFingerprintService", "request: \(request.cURL(pretty: true))")
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 404 {
                 self.logger.debug("DeviceFingerprintService", "Fingerprint not found")

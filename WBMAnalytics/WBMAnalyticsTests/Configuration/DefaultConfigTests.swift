@@ -49,7 +49,7 @@ private extension DefaultConfigTests {
         static let value: DefaultConfig = .init()
         static let jsonString = """
            {
-                "analyticsURL": "https://a.wb.ru/m/batch",
+                "analyticsURL": "https://wba.wb.ru/m/batch",
                 "batch": {
                     "sendingDelay": 2.0,
                     "size": 200,

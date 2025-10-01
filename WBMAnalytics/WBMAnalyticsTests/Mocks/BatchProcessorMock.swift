@@ -8,6 +8,16 @@ import Foundation
 
 final class BatchProcessorMock: BatchProcessor {
 
+    // MARK: - setDeviceId
+
+    private(set) var setDeviceIdWasCalled: Int = 0
+    private(set) var setDeviceReceivedArguments: String?
+
+    func setDeviceId(_ deviceId: String?) {
+        setDeviceIdWasCalled += 1
+        setDeviceReceivedArguments = deviceId
+    }
+
     // MARK: - setup
 
     private(set) var setupReceivedArguments: (

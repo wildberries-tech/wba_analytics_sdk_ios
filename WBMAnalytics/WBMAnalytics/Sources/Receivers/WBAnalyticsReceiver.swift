@@ -33,7 +33,7 @@ public final class WBAnalyticsReceiver {
         analyticsURL: URL = WBAnalyticsReceiver.defaultAnalyticsURL,
         inteceptor: RequestInterceptor = NoOpInterceptor(),
         isFirstLaunch: Bool,
-        enableAttributionTracking: Bool = false,
+        enableAttributionTracking: Bool = true,
         loggingOptions: LoggingOptions,
         networkTypeProvider: NetworkTypeProviderProtocol,
         batchConfig: BatchConfig,
@@ -85,6 +85,10 @@ extension WBAnalyticsReceiver: AnalyticsReceiver {
         analyticsInstance?.setUserToken(token)
     }
 
+    public func setDeviceId(_ deviceId: String?) {
+        analyticsInstance?.setDeviceId(deviceId)
+    }
+
     /// Sets common parameters for the analytics.
     public func setCommonParameters(_ parameters: [String: Any]) {
         analyticsInstance?.setCommonParameters(parameters)
@@ -118,6 +122,6 @@ public extension WBAnalyticsReceiver {
 extension WBAnalyticsReceiver {
 
     public static var defaultAnalyticsURL: URL {
-        URL(string: "https://a.wb.ru/m/batch")!
+        URL(string: "https://wba.wb.ru/m/batch")!
     }
 }

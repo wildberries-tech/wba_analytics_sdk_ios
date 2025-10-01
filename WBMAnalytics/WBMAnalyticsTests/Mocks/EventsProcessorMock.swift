@@ -8,6 +8,16 @@ import Foundation
 
 final class EventsProcessorMock: EventsProcessor {
 
+    // MARK: - setDeviceId
+
+    private(set) var setDeviceIdWasCalled: Int = 0
+    private(set) var setDeviceReceivedArguments: String?
+
+    func setDeviceId(_ deviceId: String?) {
+        setDeviceIdWasCalled += 1
+        setDeviceReceivedArguments = deviceId
+    }
+
     // MARK: - Properties to track method calls and parameters
 
     private(set) var setupWasCalled: Int = 0

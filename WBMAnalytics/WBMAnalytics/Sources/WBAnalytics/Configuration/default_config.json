@@ -1,5 +1,5 @@
 {
-  "analyticsURL": "https://a.wb.ru/m/batch",
+  "analyticsURL": "https://wba.wb.ru/m/batch",
   "batch": {
     "sendingDelay": 2,
     "size": 200,

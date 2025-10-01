@@ -57,6 +57,10 @@ public enum Version: String {
     case iPhone16Pro
     case iPhone16Pro_Max
     case iPhone16e
+    case iPhone17
+    case iPhone17Pro
+    case iPhone17Pro_Max
+    case iPhoneAir
 
     /*** iPad ***/
     case iPad1
@@ -229,7 +233,15 @@ extension Version {
         case .iPhone16Pro_Max:
             return CGSize(width: 1320, height: 2868)
         case .iPhone16e:
-            return CGSize(width: 1179, height: 2556) // Fallback to iPhone 16 size
+            return CGSize(width: 1179, height: 2556)
+        case .iPhone17:
+            return CGSize(width: 1206, height: 2622)
+        case .iPhone17Pro:
+            return CGSize(width: 1206, height: 2622)
+        case .iPhone17Pro_Max:
+            return CGSize(width: 1320, height: 2868)
+        case .iPhoneAir:
+            return CGSize(width: 1260, height: 2736)
         // iPad models
         case .iPad1:
             return CGSize(width: 768, height: 1024)

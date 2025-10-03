@@ -2,6 +2,14 @@
 
 import Foundation
 
+/// Result containing both fingerprint data sent and attribution response
+struct AttributionResult {
+    /// Fingerprint data that was sent to fingerprint/check endpoint
+    let fingerprintData: DeviceFingerprint
+    /// Attribution response from the server (nil if not found)
+    let attributionData: AttributionData?
+}
+
 /// Attribution server response model
 public struct AttributionData: Codable {
 

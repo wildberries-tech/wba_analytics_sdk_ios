@@ -82,10 +82,10 @@ final class AnalyticsReceiverMock: AnalyticsReceiver {
         setUserTokenReceivedValue = token
     }
 
-    private(set) var checkAttributionCompletionReceivedValue: ((Result<AttributionData?, any Error>) -> Void)?
+    private(set) var checkAttributionCompletionReceivedValue: ((Result<AttributionResult?, any Error>) -> Void)?
     private(set) var checkAttributionWasCalled: Int = 0
 
-    func checkAttribution(completion: ((Result<AttributionData?, any Error>) -> Void)?) {
+    func checkAttribution(completion: ((Result<AttributionResult?, any Error>) -> Void)?) {
         checkAttributionWasCalled += 1
         checkAttributionCompletionReceivedValue = completion
     }

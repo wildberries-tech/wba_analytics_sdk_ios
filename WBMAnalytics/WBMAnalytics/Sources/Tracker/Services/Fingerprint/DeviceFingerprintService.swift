@@ -37,8 +37,8 @@ final class DeviceFingerprintService {
     }
 
     /// Checks device attribution via fingerprint
-    /// - Parameter completion: Callback with AttributionData or error
-    func checkAttribution(completion: @escaping (Result<AttributionData?, Error>) -> Void) {
+    /// - Parameter completion: Callback with AttributionResult or error
+    func checkAttribution(completion: @escaping (Result<AttributionResult?, Error>) -> Void) {
         attributionQueue.async { [weak self] in
             guard let self = self else { return }
 
@@ -53,16 +53,27 @@ final class DeviceFingerprintService {
             let fingerprint = self.collector.collect()
             self.logger.info("DeviceFingerprintService", "Fingerprint collected: \(fingerprint)")
             self.sendAttributionRequest(fingerprint) { [weak self] result in
-                if case .success(let response) = result, let response {
-                    self?.storage.save(response)
-                    if response.isEmpty {
-                        self?.logger.info("DeviceFingerprintService", "Attribution not found, isEmpty == true")
-                    } else {
-                        self?.logger.info("DeviceFingerprintService", "Attribution successfully saved to disk.")
+                switch result {
+                case .success(let attributionData):
+                    if let attributionData {
+                        self?.storage.save(attributionData)
+                        if attributionData.isEmpty {
+                            self?.logger.info("DeviceFingerprintService", "Attribution not found, isEmpty == true")
+                        } else {
+                            self?.logger.info("DeviceFingerprintService", "Attribution successfully saved to disk.")
+                        }
                     }
-                }
-                DispatchQueue.main.async {
-                    completion(result)
+                    let attributionResult = AttributionResult(
+                        fingerprintData: fingerprint,
+                        attributionData: attributionData
+                    )
+                    DispatchQueue.main.async {
+                        completion(.success(attributionResult))
+                    }
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        completion(.failure(error))
+                    }
                 }
             }
         }

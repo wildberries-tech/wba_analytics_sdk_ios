@@ -20,8 +20,8 @@ final class WBTracker {
     }
 
     /// Checks device attribution via fingerprint
-    /// - Parameter completion: Callback with AttributionData or error
-    public func checkAttribution(completion: ((Result<AttributionData?, Error>) -> Void)? = nil) {
+    /// - Parameter completion: Callback with AttributionResult or error
+    public func checkAttribution(completion: ((Result<AttributionResult?, Error>) -> Void)? = nil) {
         logger.info("WBTracker", "checkAttribution started")
         deviceFingerprintService.checkAttribution { result in
             completion?(result)

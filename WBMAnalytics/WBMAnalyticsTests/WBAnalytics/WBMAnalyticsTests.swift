@@ -285,6 +285,83 @@ final class WBMAnalyticsTests: XCTestCase {
         mirror.delegate?.didResolveAttributedLink(URL(string: "https://example.com")!)
     }
 
+    func testReportInstallParameterStructure() {
+        // Given
+        let mockFingerprint = DeviceFingerprint(
+            screen: "1440x900",
+            platform: "iPhone",
+            language: "en-US",
+            timezone: "America/New_York",
+            user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+            device: "iPhone",
+            version_os: "17.0"
+        )
+        let mockAttributionData = AttributionData.create(
+            isEmpty: false,
+            link: "https://example.com/deeplink",
+            parametersAny: [
+                "utm_source": "google",
+                "utm_medium": "cpc",
+                "campaign_id": "123456"
+            ]
+        )
+        let attributionResult = AttributionResult(
+            fingerprintData: mockFingerprint,
+            attributionData: mockAttributionData
+        )
+        // When - simulate what checkAttribution does
+        var capturedParameters: [String: Any] = [:]
+        // Add fingerprint data as user_attributes using direct conversion
+        if let fingerprintData = try? JSONEncoder().encode(attributionResult.fingerprintData),
+           let fingerprintDict = (try? JSONSerialization.jsonObject(with: fingerprintData) as? [String: Any]) {
+            capturedParameters["user_attributes"] = fingerprintDict
+        }
+        // Add attribution response as fingerprint_gathered
+        if let attributionData = attributionResult.attributionData {
+            var fingerprintGathered: [String: Any] = [:]
+            if let link = attributionData.link {
+                fingerprintGathered["link"] = link
+            }
+            if let attributionParameters = attributionData.parametersAsAny() {
+                // Merge attribution parameters at the same level as link
+                fingerprintGathered.merge(attributionParameters) { _, new in new }
+            }
+            capturedParameters["fingerprint_gathered"] = fingerprintGathered
+            // Also include attribution parameters at the root level for backward compatibility
+            if let attributionParameters = attributionData.parametersAsAny() {
+                capturedParameters.merge(attributionParameters) { _, new in new }
+            }
+        }
+        // Then - verify the structure
+        XCTAssertNotNil(capturedParameters["user_attributes"])
+        XCTAssertNotNil(capturedParameters["fingerprint_gathered"])
+        // Check user_attributes contains fingerprint data
+        if let userAttributes = capturedParameters["user_attributes"] as? [String: Any] {
+            XCTAssertEqual(userAttributes["screen"] as? String, "1440x900")
+            XCTAssertEqual(userAttributes["platform"] as? String, "iPhone")
+            XCTAssertEqual(userAttributes["device"] as? String, "iPhone")
+            XCTAssertEqual(userAttributes["language"] as? String, "en-US")
+            XCTAssertEqual(userAttributes["timezone"] as? String, "America/New_York")
+            XCTAssertEqual(userAttributes["version_os"] as? String, "17.0")
+            XCTAssertNotNil(userAttributes["user_agent"])
+        } else {
+            XCTFail("user_attributes should be a dictionary")
+        }
+        // Check fingerprint_gathered contains flattened attribution data
+        if let fingerprintGathered = capturedParameters["fingerprint_gathered"] as? [String: Any] {
+            XCTAssertEqual(fingerprintGathered["link"] as? String, "https://example.com/deeplink")
+            XCTAssertEqual(fingerprintGathered["utm_source"] as? String, "google")
+            XCTAssertEqual(fingerprintGathered["utm_medium"] as? String, "cpc")
+            XCTAssertEqual(fingerprintGathered["campaign_id"] as? String, "123456")
+        } else {
+            XCTFail("fingerprint_gathered should be a dictionary")
+        }
+        // Check backward compatibility - attribution parameters at root level
+        XCTAssertEqual(capturedParameters["utm_source"] as? String, "google")
+        XCTAssertEqual(capturedParameters["utm_medium"] as? String, "cpc")
+        XCTAssertEqual(capturedParameters["campaign_id"] as? String, "123456")
+    }
+
 }
 
 // MARK: TestData

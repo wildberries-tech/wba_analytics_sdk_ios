@@ -237,7 +237,10 @@ final class DeviceFingerprintTests: XCTestCase {
             screen: "1440x900",
             platform: "MacIntel",
             language: "ru",
-            timezone: "Europe/Moscow"
+            timezone: "Europe/Moscow",
+            user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+            device: "iPhone",
+            version_os: "18.0"
         )
         
         // When
@@ -249,6 +252,9 @@ final class DeviceFingerprintTests: XCTestCase {
         XCTAssertEqual(decoded.platform, fingerprint.platform)
         XCTAssertEqual(decoded.language, fingerprint.language)
         XCTAssertEqual(decoded.timezone, fingerprint.timezone)
+        XCTAssertEqual(decoded.user_agent, fingerprint.user_agent)
+        XCTAssertEqual(decoded.device, fingerprint.device)
+        XCTAssertEqual(decoded.version_os, fingerprint.version_os)
     }
     
     func testDeviceFingerprintFromJSON() throws {
@@ -258,7 +264,10 @@ final class DeviceFingerprintTests: XCTestCase {
             "screen": "1920x1080",
             "platform": "iPhone",
             "language": "en",
-            "timezone": "America/New_York"
+            "timezone": "America/New_York",
+            "user_agent": "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+            "device": "iPad",
+            "version_os": "17.0"
         }
         """.data(using: .utf8)!
         
@@ -270,6 +279,9 @@ final class DeviceFingerprintTests: XCTestCase {
         XCTAssertEqual(fingerprint.platform, "iPhone")
         XCTAssertEqual(fingerprint.language, "en")
         XCTAssertEqual(fingerprint.timezone, "America/New_York")
+        XCTAssertEqual(fingerprint.user_agent, "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
+        XCTAssertEqual(fingerprint.device, "iPad")
+        XCTAssertEqual(fingerprint.version_os, "17.0")
     }
 }
 
@@ -423,8 +435,8 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         sut.checkAttribution { result in
             // Then
             switch result {
-            case .success(let data):
-                XCTAssertNil(data)
+            case .success(let attributionResult):
+                XCTAssertNil(attributionResult)
             case .failure:
                 XCTFail("Expected success")
             }
@@ -443,7 +455,10 @@ final class DeviceFingerprintServiceTests: XCTestCase {
             screen: "1440x900",
             platform: "Test",
             language: "en",
-            timezone: "UTC"
+            timezone: "UTC",
+            user_agent: "Mozilla/5.0 (Test)",
+            device: "iPhone",
+            version_os: "17.0"
         )
         let expectation = expectation(description: "Attribution check completion")
         
@@ -467,6 +482,46 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         XCTAssertEqual(collectorMock.collectCallCount, 1)
         XCTAssertEqual(storageMock.isAttributionDidRequestedCallCount, 1)
     }
+    
+    func testAttributionResultStructure() {
+        // Given
+        let mockFingerprint = DeviceFingerprint(
+            screen: "1440x900",
+            platform: "iPhone",
+            language: "en-US",
+            timezone: "America/New_York",
+            user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+            device: "iPhone",
+            version_os: "17.0"
+        )
+        
+        let mockAttributionData = AttributionData.create(
+            isEmpty: false,
+            link: "https://example.com/deeplink",
+            parametersAny: [
+                "utm_source": "google",
+                "utm_medium": "cpc",
+                "campaign_id": "123456"
+            ]
+        )
+        
+        // When
+        let attributionResult = AttributionResult(
+            fingerprintData: mockFingerprint,
+            attributionData: mockAttributionData
+        )
+        
+        // Then
+        XCTAssertEqual(attributionResult.fingerprintData.screen, "1440x900")
+        XCTAssertEqual(attributionResult.fingerprintData.platform, "iPhone")
+        XCTAssertEqual(attributionResult.fingerprintData.device, "iPhone")
+        
+        XCTAssertNotNil(attributionResult.attributionData)
+        XCTAssertEqual(attributionResult.attributionData?.link, "https://example.com/deeplink")
+        XCTAssertEqual(attributionResult.attributionData?.parametersAsAny()?["utm_source"] as? String, "google")
+        XCTAssertEqual(attributionResult.attributionData?.parametersAsAny()?["utm_medium"] as? String, "cpc")
+        XCTAssertEqual(attributionResult.attributionData?.parametersAsAny()?["campaign_id"] as? String, "123456")
+    }
 }
 
 // MARK: - Mocks
@@ -477,7 +532,10 @@ final class DeviceFingerprintCollectorMock: DeviceFingerprintCollector {
         screen: "1440x900",
         platform: "TestPlatform",
         language: "en",
-        timezone: "UTC"
+        timezone: "UTC",
+        user_agent: "Mozilla/5.0 (TestPlatform)",
+        device: "iPhone",
+        version_os: "17.0"
     )
     
     override func collect() -> DeviceFingerprint {

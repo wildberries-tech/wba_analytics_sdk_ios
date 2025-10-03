@@ -168,17 +168,42 @@ public class WBAnalytics {
     private func checkAttribution() {
         attributionTracker.checkAttribution { [weak self] result in
             switch result {
-            case .success(let data):
-                guard data != nil else { return }
+            case .success(let attributionResult):
+                guard let attributionResult else { return }
 
-                // report install
-                let parameters = data?.parametersAsAny() ?? [:]
-                self?.reportInstall(parameters: parameters)
+                // Prepare parameters with fingerprint data as user_attributes and attribution response as fingerprint_gathered
+                var parameters: [String: Any] = [:]
 
-                // resolve a link
-                if let link = data?.link, let url = URL(string: link) {
-                    self?.delegate?.didResolveAttributedLink(url)
+                if let fingerprintData = try? JSONEncoder().encode(attributionResult.fingerprintData),
+                    let fingerprintDict = (try? JSONSerialization.jsonObject(with: fingerprintData) as? [String: Any]) {
+                    parameters["user_attributes"] = fingerprintDict
                 }
+
+                // Add attribution response as fingerprint_gathered
+                if let attributionData = attributionResult.attributionData {
+                    var fingerprintGathered: [String: Any] = [:]
+                    if let link = attributionData.link {
+                        fingerprintGathered["link"] = link
+                    }
+                    if let attributionParameters = attributionData.parametersAsAny() {
+                        fingerprintGathered.merge(attributionParameters) { _, new in new }
+                    }
+
+                    parameters["fingerprint_gathered"] = fingerprintGathered
+                    // Also include attribution parameters at the root level for backward compatibility
+                    if let attributionParameters = attributionData.parametersAsAny() {
+                        parameters.merge(attributionParameters) { _, new in new }
+                    }
+                    // resolve a link
+                    if let link = attributionData.link, let url = URL(string: link) {
+                        self?.delegate?.didResolveAttributedLink(url)
+                    }
+                } else {
+                    // No attribution data found
+                    parameters["fingerprint_gathered"] = [:]
+                }
+                // report install
+                self?.reportInstall(parameters: parameters)
             case .failure:
                 // do nothing with that
                 break

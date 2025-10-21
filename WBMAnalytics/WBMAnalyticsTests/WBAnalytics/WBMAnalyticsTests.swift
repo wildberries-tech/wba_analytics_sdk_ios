@@ -288,7 +288,8 @@ final class WBMAnalyticsTests: XCTestCase {
     func testReportInstallParameterStructure() {
         // Given
         let mockFingerprint = DeviceFingerprint(
-            screen: "1440x900",
+            screen_resolution: "1440x900",
+            pixel_ratio: "2",
             platform: "iPhone",
             language: "en-US",
             timezone: "America/New_York",
@@ -337,7 +338,7 @@ final class WBMAnalyticsTests: XCTestCase {
         XCTAssertNotNil(capturedParameters["fingerprint_gathered"])
         // Check user_attributes contains fingerprint data
         if let userAttributes = capturedParameters["user_attributes"] as? [String: Any] {
-            XCTAssertEqual(userAttributes["screen"] as? String, "1440x900")
+            XCTAssertEqual(userAttributes["screen_resolution"] as? String, "1440x900")
             XCTAssertEqual(userAttributes["platform"] as? String, "iPhone")
             XCTAssertEqual(userAttributes["device"] as? String, "iPhone")
             XCTAssertEqual(userAttributes["language"] as? String, "en-US")

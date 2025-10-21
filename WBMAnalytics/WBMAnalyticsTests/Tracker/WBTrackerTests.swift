@@ -234,7 +234,8 @@ final class DeviceFingerprintTests: XCTestCase {
     func testDeviceFingerprintCodable() throws {
         // Given
         let fingerprint = DeviceFingerprint(
-            screen: "1440x900",
+            screen_resolution: "1440x900",
+            pixel_ratio: "2",
             platform: "MacIntel",
             language: "ru",
             timezone: "Europe/Moscow",
@@ -248,7 +249,8 @@ final class DeviceFingerprintTests: XCTestCase {
         let decoded = try JSONDecoder().decode(DeviceFingerprint.self, from: encoded)
         
         // Then
-        XCTAssertEqual(decoded.screen, fingerprint.screen)
+        XCTAssertEqual(decoded.screen_resolution, fingerprint.screen_resolution)
+        XCTAssertEqual(decoded.pixel_ratio, fingerprint.pixel_ratio)
         XCTAssertEqual(decoded.platform, fingerprint.platform)
         XCTAssertEqual(decoded.language, fingerprint.language)
         XCTAssertEqual(decoded.timezone, fingerprint.timezone)
@@ -261,7 +263,8 @@ final class DeviceFingerprintTests: XCTestCase {
         // Given
         let json = """
         {
-            "screen": "1920x1080",
+            "screen_resolution": "1920x1080",
+            "pixel_ratio": "2",
             "platform": "iPhone",
             "language": "en",
             "timezone": "America/New_York",
@@ -275,7 +278,8 @@ final class DeviceFingerprintTests: XCTestCase {
         let fingerprint = try JSONDecoder().decode(DeviceFingerprint.self, from: json)
         
         // Then
-        XCTAssertEqual(fingerprint.screen, "1920x1080")
+        XCTAssertEqual(fingerprint.screen_resolution, "1920x1080")
+        XCTAssertEqual(fingerprint.pixel_ratio, "2")
         XCTAssertEqual(fingerprint.platform, "iPhone")
         XCTAssertEqual(fingerprint.language, "en")
         XCTAssertEqual(fingerprint.timezone, "America/New_York")
@@ -306,8 +310,8 @@ final class DeviceFingerprintCollectorTests: XCTestCase {
         let fingerprint = sut.collect()
         
         // Then
-        XCTAssertFalse(fingerprint.screen.isEmpty)
-        XCTAssertTrue(fingerprint.screen.contains("x"))
+        XCTAssertFalse(fingerprint.screen_resolution.isEmpty)
+        XCTAssertTrue(fingerprint.screen_resolution.contains("x"))
         XCTAssertFalse(fingerprint.platform.isEmpty)
         XCTAssertFalse(fingerprint.language.isEmpty)
         XCTAssertFalse(fingerprint.timezone.isEmpty)
@@ -318,7 +322,7 @@ final class DeviceFingerprintCollectorTests: XCTestCase {
         let fingerprint = sut.collect()
         
         // Then
-        let screenComponents = fingerprint.screen.split(separator: "x")
+        let screenComponents = fingerprint.screen_resolution.split(separator: "x")
         XCTAssertEqual(screenComponents.count, 2)
         XCTAssertNotNil(Int(screenComponents[0]))
         XCTAssertNotNil(Int(screenComponents[1]))
@@ -452,7 +456,8 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         storageMock.attributionData = nil
         storageMock.attributionDidRequested = false
         collectorMock.fingerprintToReturn = DeviceFingerprint(
-            screen: "1440x900",
+            screen_resolution: "1440x900",
+            pixel_ratio: "2",
             platform: "Test",
             language: "en",
             timezone: "UTC",
@@ -486,7 +491,8 @@ final class DeviceFingerprintServiceTests: XCTestCase {
     func testAttributionResultStructure() {
         // Given
         let mockFingerprint = DeviceFingerprint(
-            screen: "1440x900",
+            screen_resolution: "1440x900",
+            pixel_ratio: "2",
             platform: "iPhone",
             language: "en-US",
             timezone: "America/New_York",
@@ -512,7 +518,8 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         )
         
         // Then
-        XCTAssertEqual(attributionResult.fingerprintData.screen, "1440x900")
+        XCTAssertEqual(attributionResult.fingerprintData.screen_resolution, "1440x900")
+        XCTAssertEqual(attributionResult.fingerprintData.pixel_ratio, "2")
         XCTAssertEqual(attributionResult.fingerprintData.platform, "iPhone")
         XCTAssertEqual(attributionResult.fingerprintData.device, "iPhone")
         
@@ -529,7 +536,8 @@ final class DeviceFingerprintServiceTests: XCTestCase {
 final class DeviceFingerprintCollectorMock: DeviceFingerprintCollector {
     var collectCallCount = 0
     var fingerprintToReturn = DeviceFingerprint(
-        screen: "1440x900",
+        screen_resolution: "1440x900",
+        pixel_ratio: "2",
         platform: "TestPlatform",
         language: "en",
         timezone: "UTC",

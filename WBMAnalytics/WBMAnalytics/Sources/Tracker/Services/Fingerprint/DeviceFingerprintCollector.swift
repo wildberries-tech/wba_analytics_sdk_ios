@@ -56,7 +56,8 @@ class DeviceFingerprintCollector {
     /// Collects device fingerprint for the current device
     func collect() -> DeviceFingerprint {
         let size = Device.version(detectSimulator: true).physicalSize
-        let screen = "\(Int(size.width))x\(Int(size.height))"
+        let screenResolution = "\(Int(size.width))x\(Int(size.height))"
+        let pixelRatio = "\(Int(UIScreen.main.currentMode?.pixelAspectRatio ?? 2.0))"
         let platform = UIDevice.current.model
         var language = String(Locale.preferredLanguages.first?.split(separator: "-").first ?? "")
         let timezone = TimeZone.current.identifier
@@ -70,7 +71,8 @@ class DeviceFingerprintCollector {
         #endif
 
         return DeviceFingerprint(
-            screen: screen,
+            screen_resolution: screenResolution,
+            pixel_ratio: pixelRatio,
             platform: platform,
             language: language,
             timezone: timezone,

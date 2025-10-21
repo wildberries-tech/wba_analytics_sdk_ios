@@ -282,7 +282,7 @@ private extension BatchSenderImplTests {
         static let httpMethod = "POST"
         static let contentType = "application/json; charset=utf-8"
         static let forHTTPHeaderField = "X-Api-Key"
-        static let url = URL(string: "https://wba.wb.ru/m/batch")!
+        static let url = URL(string: "https://a.wb.ru/m/batch")!
         static let urlTwo = URL(string: "https://example.com")!
     }
 

@@ -17,6 +17,7 @@ protocol BatchProcessor {
     func sendEventSync(event: Event, completion: @escaping (_ successfully: Bool) -> Void)
     func setUserToken(_ token: String?)
     func setDeviceId(_ deviceId: String?)
+    func setIDFA(_ idfa: @escaping () -> String)
 }
 
 final class BatchProcessorImpl: BatchProcessor {
@@ -33,6 +34,7 @@ final class BatchProcessorImpl: BatchProcessor {
     private var batchWorker: BatchWorker?
     private var storage: Storage
     private var deviceId: String?
+    private var idfa: (() -> String)?
     // default value
     private var batches: [BatchModel] = []
     private var isNewLaunch = false
@@ -109,6 +111,10 @@ final class BatchProcessorImpl: BatchProcessor {
 
     func setDeviceId(_ deviceId: String?) {
         self.deviceId = deviceId
+    }
+
+    func setIDFA(_ idfa: @escaping () -> String) {
+        self.idfa = idfa
     }
 
     func sendEventSync(event: Event, completion: @escaping (_ successfully: Bool) -> Void) {
@@ -262,6 +268,7 @@ final class BatchProcessorImpl: BatchProcessor {
         return Meta(
             networkType: networkType,
             deviceId: deviceId ?? WBAnalytics.deviceId,
+            idfa: idfa.idfaOrEmpty,
             isNewUser: isNewLaunch
         )
     }

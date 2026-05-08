@@ -89,6 +89,20 @@ extension WBAnalyticsReceiver: AnalyticsReceiver {
         analyticsInstance?.setDeviceId(deviceId)
     }
 
+    /// Sets a unique session value
+    public func setSessionValue(_ value: String?) {
+        analyticsInstance?.setSessionValue(value)
+    }
+
+    /// Set a handler called when session value updates
+    public func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+        analyticsInstance?.setOnSessionValueUpdated(handler)
+    }
+
+    public func setIDFA(_ idfa: @escaping () -> String) {
+        analyticsInstance?.setIDFA(idfa)
+    }
+
     /// Sets common parameters for the analytics.
     public func setCommonParameters(_ parameters: [String: Any]) {
         analyticsInstance?.setCommonParameters(parameters)

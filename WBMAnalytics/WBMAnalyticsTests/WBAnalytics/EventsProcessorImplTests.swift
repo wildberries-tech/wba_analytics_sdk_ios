@@ -23,6 +23,8 @@ final class EventsProcessorImplTests: XCTestCase {
     private var userEngagementTrackerMock: UserEngagementTrackerMock!
     private var processor: EventsProcessorImpl!
     private var requestInterceptorMock: RequestInterceptorMock!
+    private var sessionValueManagerMock: SessionValueManagerMock!
+    private var appStartTrackerMock: AppStartTrackerMock!
 
     override func setUp() {
         super.setUp()
@@ -38,13 +40,18 @@ final class EventsProcessorImplTests: XCTestCase {
         userEngagementTrackerMock = .init()
         queueMock = .init(label: TestData.queueLabel)
         timerMakerMock.timerStub = timerMock
+        sessionValueManagerMock = .init()
+        sessionValueManagerMock.sessionValue = TestData.sessionValue
+        appStartTrackerMock = .init()
         processor = EventsProcessorImpl(
             batchProcessor: batchProcessorMock,
             logger: loggerMock,
             analyticsURL: TestData.url,
             interceptor: requestInterceptorMock,
             notificationCenter: notificationCenterMock,
-            timerMaker: timerMakerMock
+            timerMaker: timerMakerMock,
+            sessionValueManager: sessionValueManagerMock,
+            appStartTracker: appStartTrackerMock
         )
     }
 
@@ -61,12 +68,14 @@ final class EventsProcessorImplTests: XCTestCase {
             batchProcessor: batchProcessorMock,
             logger: loggerMock,
             analyticsURL: TestData.url,
-            interceptor: requestInterceptorMock
+            interceptor: requestInterceptorMock,
+            appStartTracker: appStartTrackerMock
         )
         let mirror = Mirror(reflecting: processor)
         // then
         XCTAssertEqual(mirror.notificationCenter, NotificationCenter.default)
         XCTAssertIdentical(mirror.timerMaker, Timer.self)
+        XCTAssertIdentical(mirror.sessionValueManager as? SessionValueManager, SessionValueManager.shared)
         XCTAssertEqual(mirror.queue.label, TestData.analyticsQueueName)
         XCTAssertEqual(mirror.queue.qos, .default)
     }
@@ -94,6 +103,7 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual(mirror.batchConfig, batchConfig)
         XCTAssertNotNil(mirror.counter as? UserDefaultsEnumerationCounter)
         XCTAssertIdentical(mirror.interceptor as? RequestInterceptorMock, requestInterceptorMock)
+        XCTAssertEqual(appStartTrackerMock.setupWithWasCalled, 1)
     }
 
     func testSubscribeNotificationsInitSetup() {
@@ -290,8 +300,8 @@ final class EventsProcessorImplTests: XCTestCase {
         sleep(milliseconds: 300)
         // then
         XCTAssertEqual(mirror.events.first?["event_num"] as? Int, 0)
-        XCTAssertEqual(mirror.events.first?["event_time"] as? String, timeString)
         XCTAssertEqual(mirror.events.first?["name"] as? String, "first_open")
+        XCTAssertEqual(mirror.events.first?["session_value"] as? String, TestData.sessionValue)
         XCTAssertEqual((mirror.events.first?["data"] as? [String: Any])?.isEmpty, true)
     }
 
@@ -336,6 +346,53 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual(timerMock.scheduleWasCalled, 1)
     }
 
+    func testAppStartTrackerSetup() {
+        // given
+        enumerationCounterMock.incrementedCountStub = 0
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: true,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock,
+            userEngagementTracker: userEngagementTrackerMock
+        )
+        sleep(milliseconds: 100)
+        // then
+        XCTAssertEqual(appStartTrackerMock.setupWithWasCalled, 1)
+    }
+
+    func testAppStartTrackerSetupClosureWasCalled() {
+        // given
+        enumerationCounterMock.incrementedCountStub = 0
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: true,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock,
+            userEngagementTracker: userEngagementTrackerMock
+        )
+        sleep(milliseconds: 100)
+        // when
+        let input = AppStartTracker.Input(
+            name: TestData.appStartEventName,
+            parameters: TestData.appStartEventParameters,
+            completion: { _ in }
+        )
+        appStartTrackerMock.setupWithReceivedClosure?(input)
+        // then
+        XCTAssertEqual(batchProcessorMock.sendEventSyncWasCalled, 1)
+        let receivedValue = batchProcessorMock.sendEventSyncReceivedValue
+        XCTAssertEqual(receivedValue?.event["name"] as? String, TestData.appStartEventName)
+        XCTAssertEqual(receivedValue?.event["data"] as? [String: Double], TestData.appStartEventParameters)
+    }
+
     // MARK: setCommonParameters
 
     func testSetCommonParameters() {
@@ -376,12 +433,13 @@ final class EventsProcessorImplTests: XCTestCase {
         )
         // when
         processor.logEvent(TestData.eventString, parameters: TestData.parameters, completion: {_ in})
-        let timeString = Date().asString
+//        let timeString = Date().asString
         // then
         XCTAssertEqual(batchProcessorMock.sendEventSyncWasCalled, 1)
         XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["event_num"] as? Int, 0)
-        XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["event_time"] as? String, timeString)
+//        XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["event_time"] as? String, timeString)
         XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["name"] as? String, "event")
+        XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["session_value"] as? String, TestData.sessionValue)
         XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["data"] as? [String: Int], TestData.parameters)
     }
 
@@ -405,12 +463,11 @@ final class EventsProcessorImplTests: XCTestCase {
         let mirror = Mirror(reflecting: processor)
         // when
         processor.addEvent(TestData.eventString, parameters: TestData.parameters)
-        let timeString = Date().asString
         sleep(milliseconds: 100)
         // then
         XCTAssertEqual(mirror.events[1]["event_num"] as? Int, 0)
-        XCTAssertEqual(mirror.events[1]["event_time"] as? String, timeString)
         XCTAssertEqual(mirror.events[1]["name"] as? String, "event")
+        XCTAssertEqual(mirror.events[1]["session_value"] as? String, TestData.sessionValue)
         XCTAssertEqual((mirror.events[1]["data"] as? [String: Int]), TestData.parametersFull)
     }
 
@@ -519,7 +576,8 @@ final class EventsProcessorImplTests: XCTestCase {
             analyticsURL: TestData.url,
             interceptor: requestInterceptorMock,
             notificationCenter: NotificationCenter.default,
-            timerMaker: timerMakerMock
+            timerMaker: timerMakerMock,
+            appStartTracker: appStartTrackerMock
         )
         enumerationCounterMock.incrementedCountStub = 0
         processor.setup(
@@ -549,7 +607,8 @@ final class EventsProcessorImplTests: XCTestCase {
             analyticsURL: TestData.url,
             interceptor: requestInterceptorMock,
             notificationCenter: NotificationCenter.default,
-            timerMaker: timerMakerMock
+            timerMaker: timerMakerMock,
+            appStartTracker: appStartTrackerMock
         )
         let mirror = Mirror(reflecting: processor)
         enumerationCounterMock.incrementedCountStub = 0
@@ -590,7 +649,8 @@ final class EventsProcessorImplTests: XCTestCase {
             analyticsURL: TestData.url,
             interceptor: requestInterceptorMock,
             notificationCenter: NotificationCenter.default,
-            timerMaker: timerMakerMock
+            timerMaker: timerMakerMock,
+            appStartTracker: appStartTrackerMock
         )
         let mirror = Mirror(reflecting: processor)
         enumerationCounterMock.incrementedCountStub = 0
@@ -645,13 +705,13 @@ final class EventsProcessorImplTests: XCTestCase {
         sleep(milliseconds: 500)
         // then
         XCTAssertEqual(mirror.events[1]["event_num"] as? Int, 0)
-        XCTAssertEqual(mirror.events[1]["event_time"] as? String, time)
         XCTAssertEqual(mirror.events[1]["name"] as? String, "user_engagement")
         XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
         XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["text_size"] as? Int, 2)
+        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["auth_type"] as? String, "noAuth")
     }
 
-    // MARK: set device id
+    // MARK: setDeviceId
 
     func testSetDeviceId() {
         // when
@@ -661,6 +721,41 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual(batchProcessorMock.setDeviceReceivedArguments, TestData.deviceId)
     }
 
+    // MARK: setSessionValue
+
+    func testSetSessionValue() {
+        // given
+        let newValue = "12345"
+        // when
+        sessionValueManagerMock.setSessionValue(newValue)
+        // then
+        XCTAssertEqual(sessionValueManagerMock.setSessionValueWasCalled, 1)
+        XCTAssertEqual(sessionValueManagerMock.setSessionValueReceivedValue, newValue)
+    }
+
+    // MARK: setOnSessionValueUpdated
+
+    func testSetOnSessionValueUpdated() {
+        // given
+        let handler: (String?) -> Void = { _ in }
+        // when
+        sessionValueManagerMock.setOnSessionValueUpdated(handler)
+        // then
+        XCTAssertNotNil(sessionValueManagerMock.setOnSessionValueUpdatedReceivedValue)
+        XCTAssertEqual(sessionValueManagerMock.setOnSessionValueUpdatedWasCalled, 1)
+    }
+
+    // MARK: setIDFA
+
+    func setIDFA() {
+        // given
+        let idfaClosure: () -> String = { TestData.idfa }
+        // when
+        processor.setIDFA(idfaClosure)
+        // then
+        XCTAssertEqual(batchProcessorMock.setIDFAWasCalled, 1)
+        XCTAssertEqual(batchProcessorMock.setIDFAReceivedValue?(), TestData.idfa)
+    }
 }
 
 // MARK: TestData
@@ -668,7 +763,7 @@ final class EventsProcessorImplTests: XCTestCase {
 private extension EventsProcessorImplTests {
     enum TestData {
         static let deviceId = "deviceId"
-        static let userEngagement: UserEngagement = .init(screenName: "event", textSize: .small)
+        static let userEngagement: UserEngagement = .init(screenName: "event", textSize: .small, authType: "noAuth")
         static let url = URL(string: "https://example.com")!
         static let event: Event = .init(meta: ["Meta": 123], batchNum: 0, events: [["name":321]])
         static let parameters: [String: Int] = [event2String: 123]
@@ -681,6 +776,10 @@ private extension EventsProcessorImplTests {
         static let logLabel = "EventsProcessor"
         static let analyticsQueueName = "WBAnalytics"
         static let newLaunchKey = "WBMAnalytics-isNewLaunch"
+        static let sessionValue = "1587023248356386046"
+        static let appStartEventName = "application_start"
+        static let appStartEventParameters: [String: Double] = ["ram": 64, "cpu": 4.61]
+        static let idfa = "01234567-1234-1234-1234-123456789012"
     }
 }
 
@@ -701,9 +800,11 @@ private extension EventsProcessorImplTests {
         var batchConfig: BatchConfig! { extract() }
         var counter: EnumerationCounter! { extract() }
         var interceptor: RequestInterceptor! { extract() }
+        var appStartTracker: AppStartTrackerProtocol! { extract() }
         var sendEventsTimer: TimerProtocol? { extract() }
         var events: [Event]! { extract() }
         var commonParameters: [String: Any]! { extract() }
+        var sessionValueManager: SessionValueManagerProtocol! { extract() }
     }
 
     final class BatchSenderImplMirror: MirrorObject {

@@ -93,4 +93,14 @@ final class BatchProcessorMock: BatchProcessor {
         setUserTokenWasCalled += 1
         setUserTokenReceivedValue = token
     }
+
+    // - MARK: setIDFA
+
+    private(set) var setIDFAWasCalled: Int = 0
+    private(set) var setIDFAReceivedValue: (() -> String)?
+
+    func setIDFA(_ idfa: @escaping () -> String) {
+        setIDFAWasCalled += 1
+        setIDFAReceivedValue = idfa
+    }
 }

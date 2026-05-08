@@ -17,26 +17,26 @@ public struct AttributionData: Codable {
     public let isEmpty: Bool
 
     /// Link to follow after installation
-    public let link: String?
+    public let deeplink: String?
     /// Other parameters (key: parameter value which can be any JSON type)
     public let parameters: [String: AnyValue]?
 
     enum CodingKeys: String, CodingKey, CaseIterable {
-        case link
+        case deeplink
         case isEmpty
     }
 
     init(
         isEmpty: Bool,
-        link: String?,
+        deeplink: String?,
         parameters: [String: AnyValue]?
     ) {
-        self.link = link
+        self.deeplink = deeplink
         self.parameters = parameters
         self.isEmpty = isEmpty
     }
 
-    static let empty: AttributionData = .init(isEmpty: true, link: nil, parameters: nil)
+    static let empty: AttributionData = .init(isEmpty: true, deeplink: nil, parameters: nil)
 
     /// Convert parameters to [String: Any] dictionary for compatibility
     public func parametersAsAny() -> [String: Any]? {
@@ -46,20 +46,20 @@ public struct AttributionData: Codable {
     /// Create AttributionData with parameters from [String: Any]
     public static func create(
         isEmpty: Bool = false,
-        link: String?,
+        deeplink: String?,
         parametersAny: [String: Any]?
     ) -> AttributionData {
         let convertedParameters = parametersAny?.mapValues { AnyValue.from($0) }
         return AttributionData(
             isEmpty: isEmpty,
-            link: link,
+            deeplink: deeplink,
             parameters: convertedParameters
         )
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        link = try container.decodeIfPresent(String.self, forKey: .link)
+        deeplink = try container.decodeIfPresent(String.self, forKey: .deeplink)
         let all = try decoder.container(keyedBy: DynamicCodingKeys.self)
         var parametersDict: [String: AnyValue] = [:]
         for key in all.allKeys {
@@ -76,7 +76,7 @@ public struct AttributionData: Codable {
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(link, forKey: .link)
+        try container.encodeIfPresent(deeplink, forKey: .deeplink)
         try container.encodeIfPresent(isEmpty, forKey: .isEmpty)
         if let parameters = parameters {
             var dynamicContainer = encoder.container(keyedBy: DynamicCodingKeys.self)

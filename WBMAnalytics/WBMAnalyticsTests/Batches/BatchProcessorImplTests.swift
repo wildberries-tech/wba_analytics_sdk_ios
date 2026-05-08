@@ -526,6 +526,7 @@ final class BatchProcessorImplTests: XCTestCase {
         XCTAssertEqual(meta?["device_id"] as? String, WBAnalytics.deviceId)
         XCTAssertEqual(meta?["manufacturer"] as? String, TestData.manufacturer)
         XCTAssertEqual(meta?["net_type"] as? String, "2G")
+        XCTAssertEqual(meta?["device_ad_id"] as? String, "")
         XCTAssertEqual(events?.count, 1)
         XCTAssertEqual(events?.first?["event"] as? Int, 321)
         XCTAssertEqual(storageMock.addBatchWasCalled, 1)
@@ -549,6 +550,46 @@ final class BatchProcessorImplTests: XCTestCase {
         let meta = batches?["meta"] as? [String: Any]
         // then
         XCTAssertEqual(meta?["device_id"] as? String, TestData.deviceId)
+    }
+
+    func testAddBatchWithProvidedValidIDFA() {
+        // given
+        userStorageMock.loadBatchesStub = []
+        batchProcessor.setup(
+            batchSender: batchSenderMock,
+            queue: dispatchMock,
+            networkTypeProvider: networkProviderMock,
+            counter: counterMock,
+            batchWorker: batchWorkerMock
+        )
+        counterMock.incrementedCountStub = 0
+        // when
+        batchProcessor.setIDFA { TestData.validIDFA }
+        batchProcessor.addBatch(withEvents: [TestData.event])
+        let batches = storageMock.addBatchReceivedBatch
+        let meta = batches?["meta"] as? [String: Any]
+        // then
+        XCTAssertEqual(meta?["device_ad_id"] as? String, TestData.validIDFA)
+    }
+
+    func testAddBatchWithProvidedInvalidIDFA() {
+        // given
+        userStorageMock.loadBatchesStub = []
+        batchProcessor.setup(
+            batchSender: batchSenderMock,
+            queue: dispatchMock,
+            networkTypeProvider: networkProviderMock,
+            counter: counterMock,
+            batchWorker: batchWorkerMock
+        )
+        counterMock.incrementedCountStub = 0
+        // when
+        batchProcessor.setIDFA { TestData.invalidIDFA }
+        batchProcessor.addBatch(withEvents: [TestData.event])
+        let batches = storageMock.addBatchReceivedBatch
+        let meta = batches?["meta"] as? [String: Any]
+        // then
+        XCTAssertEqual(meta?["device_ad_id"] as? String, "")
     }
 
     func testNoMemoryAddBatch() {
@@ -611,7 +652,7 @@ final class BatchProcessorImplTests: XCTestCase {
         XCTAssertFalse(mirror.isNewLaunch)
     }
 
-    // MARK: - Set device id
+    // MARK: setDeviceId
 
     func testSetDeviceId() {
         // given
@@ -620,6 +661,18 @@ final class BatchProcessorImplTests: XCTestCase {
         batchProcessor.setDeviceId(TestData.deviceId)
         // then
         XCTAssertEqual(mirror.deviceId, TestData.deviceId)
+    }
+
+    // MARK: setIDFA
+
+    func testSetIDFA() {
+        // given
+        let mirror = BatchProcessorImplMirror(reflecting: batchProcessor)
+        let idfaClosure: () -> String = { TestData.validIDFA }
+        // when
+        batchProcessor.setIDFA(idfaClosure)
+        // then
+        XCTAssertNotNil(mirror.idfa)
     }
 }
 
@@ -649,7 +702,9 @@ private extension BatchProcessorImplTests {
         static let appVersion = "16.0"
         static let model = "arm64"
         static let manufacturer = "Apple"
-        static let analyticsSdkVersion = "3.5.4"
+        static let analyticsSdkVersion = "3.5.7"
+        static let validIDFA = "01234567-1234-1234-1234-123456789012"
+        static let invalidIDFA = "00000000-0000-0000-0000-000000000000"
     }
 
     enum CustomError: Error {
@@ -680,6 +735,7 @@ private extension BatchProcessorImplTests {
 
         var isNewLaunch: Bool { extract() }
         var deviceId: String? { extract() }
+        var idfa: (() -> String)? { extract() }
         var isSending: Bool { extract() }
         var isExecutingInBackground: Bool { extract() }
         var batchesBeingSentIds: Set<String> { extract() }

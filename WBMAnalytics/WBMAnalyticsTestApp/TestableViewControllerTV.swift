@@ -32,7 +32,7 @@ final class TestableViewControllerTV: UIViewController {
 
     private lazy var showLogsPanelButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Show logs panel (iOS only)", for: .normal)        
+        button.setTitle("Show logs panel (iOS only)", for: .normal)
         button.addTarget(self, action: #selector(presentLogs), for: .primaryActionTriggered)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button

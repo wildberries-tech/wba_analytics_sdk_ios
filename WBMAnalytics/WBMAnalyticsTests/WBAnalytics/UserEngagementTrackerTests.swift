@@ -92,7 +92,7 @@ final class UserEngagementTrackerTests: XCTestCase {
 
 private extension UserEngagementTrackerTests {
     enum TestData {
-        static let userEngagement = UserEngagement(screenName: "screenName", textSize: .large)
+        static let userEngagement = UserEngagement(screenName: "screenName", textSize: .large, authType: "noAuth")
         static let timerInterval = 30.0
     }
 }

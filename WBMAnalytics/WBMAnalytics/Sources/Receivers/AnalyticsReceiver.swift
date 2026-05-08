@@ -35,6 +35,19 @@ public protocol AnalyticsReceiver {
     /// Set authenticated user token
     /// - Parameter token: Token
     func setUserToken(_ token: String?)
+
+    /// Sets a unique session value
+    /// - Parameter value: Unique session value
+    func setSessionValue(_ value: String?)
+
+    /// Set a handler called when session value updates
+    /// - Parameter handler: Handler called when session value updates
+    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void)
+
+    /// Set IDFA
+    /// - Parameter idfa: Unique advertising identifier
+    func setIDFA(_ idfa: @escaping () -> String)
+
     /// Returns a view controller to display debug logs for this receiver.
     func showLogScreen() -> UIViewController?
 }

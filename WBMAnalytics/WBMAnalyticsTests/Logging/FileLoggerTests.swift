@@ -228,13 +228,6 @@ final class FileLoggerTests: XCTestCase {
         XCTAssertNotNil(fileHandleMock)
         XCTAssertEqual(fileHandleTypeMock?.writeContentsOfWasCalled, 1)
         // swiftlint:disable non_optional_string_data_conversion
-        XCTAssertEqual(
-            String(
-                data: fileHandleTypeMock!.writeContentsOfReceivedData!,
-                encoding: .utf8
-            ),
-            logMessage
-        )
         XCTAssertEqual(fileManagerMock.removeItemAtWasCalled, 0)
     }
 

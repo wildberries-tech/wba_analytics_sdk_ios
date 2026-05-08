@@ -44,6 +44,12 @@ protocol EventsProcessor {
     func setUserToken(_ token: String?)
     /// Set device id
     func setDeviceId(_ deviceId: String?)
+    /// Set a unique session value
+    func setSessionValue(_ value: String?)
+    /// Set a handler called when session value updates
+    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void)
+    /// Set IDFA
+    func setIDFA(_ idfa: @escaping () -> String)
 }
 
 final class EventsProcessorImpl: EventsProcessor {
@@ -66,6 +72,8 @@ final class EventsProcessorImpl: EventsProcessor {
     private var counter: EnumerationCounter!
     private var sendEventsTimer: TimerProtocol?
     private let timerMaker: TimerProtocol.Type
+    private let sessionValueManager: SessionValueManagerProtocol
+    private let appStartTracker: AppStartTrackerProtocol
 
     private var events = [Event]()
     private var commonParameters = [String: Any]()
@@ -75,8 +83,10 @@ final class EventsProcessorImpl: EventsProcessor {
         logger: Logger,
         analyticsURL: URL,
         interceptor: RequestInterceptor,
-        notificationCenter: NotificationCenter = NotificationCenter.default,
+        notificationCenter: NotificationCenter = .default,
         timerMaker: TimerProtocol.Type = Timer.self,
+        sessionValueManager: SessionValueManagerProtocol = SessionValueManager.shared,
+        appStartTracker: AppStartTrackerProtocol,
         queue: DispatchQueue = DispatchQueue(
             label: Constants.analyticsQueueName,
             qos: .default
@@ -88,6 +98,8 @@ final class EventsProcessorImpl: EventsProcessor {
         self.interceptor = interceptor
         self.notificationCenter = notificationCenter
         self.timerMaker = timerMaker
+        self.sessionValueManager = sessionValueManager
+        self.appStartTracker = appStartTracker
         self.queue = queue
     }
 
@@ -144,6 +156,13 @@ final class EventsProcessorImpl: EventsProcessor {
 
             self.userEngagementTracker.start()
             self.startSendEventsTimer()
+            self.appStartTracker.setup { [weak self] input in
+                self?.processEventSync(
+                    input.name,
+                    parameters: input.parameters,
+                    completion: input.completion
+                )
+            }
         }
     }
 
@@ -166,6 +185,18 @@ final class EventsProcessorImpl: EventsProcessor {
 
     func setDeviceId(_ deviceId: String?) {
         batchProcessor.setDeviceId(deviceId)
+    }
+
+    func setSessionValue(_ value: String?) {
+        sessionValueManager.setSessionValue(value)
+    }
+
+    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+        sessionValueManager.setOnSessionValueUpdated(handler)
+    }
+
+    func setIDFA(_ idfa: @escaping () -> String) {
+        batchProcessor.setIDFA(idfa)
     }
 
     func addEvent(_ event: String, parameters: [String: Any]? = nil) {
@@ -284,7 +315,8 @@ final class EventsProcessorImpl: EventsProcessor {
         parameters.merge(commonParameters) { (current, _) in current }
 
         let eventNum = counter.incrementedCount(for: CounterParams.eventNum)
-        let event = Event(name: event, data: parameters, time: timeString, eventNum: eventNum)
+        let sessionValue = sessionValueManager.sessionValue
+        let event = Event(name: event, data: parameters, time: timeString, eventNum: eventNum, sessionValue: sessionValue)
         events.append(event)
 
         logger.debug(Constants.logLabel, "processEvent: \(event)")
@@ -307,7 +339,8 @@ final class EventsProcessorImpl: EventsProcessor {
         parameters.merge(commonParameters) { (current, _) in current }
 
         let eventNum = counter.incrementedCount(for: CounterParams.eventNum)
-        let event = Event(name: event, data: parameters, time: timeString, eventNum: eventNum)
+        let sessionValue = sessionValueManager.sessionValue
+        let event = Event(name: event, data: parameters, time: timeString, eventNum: eventNum, sessionValue: sessionValue)
 
         logger.debug(Constants.logLabel, "processEvent: \(event)")
 
@@ -319,7 +352,7 @@ final class EventsProcessorImpl: EventsProcessor {
             logger.debug(Constants.logLabel, "no events to make a batch, skipping")
             return
         }
-        let maxBytes = Constants.maxBatchSizeInBytes // 512 кб 
+        let maxBytes = Constants.maxBatchSizeInBytes // 512 кб
         let batches = splitEventsByMaxBytes(events: events, maxBytes: maxBytes)
         for batch in batches {
             batchProcessor.addBatch(withEvents: batch)

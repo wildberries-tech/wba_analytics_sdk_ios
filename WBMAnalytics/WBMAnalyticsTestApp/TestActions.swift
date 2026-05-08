@@ -3,7 +3,7 @@ import WBMAnalytics
 
 struct TestActions {
     static func addEvent() {
-        AppDelegate.shared.analytics1.trackUserEngagement(UserEngagement(screenName: "Screen_name", textSize: nil), receiverIdentifier: "")
+        AppDelegate.shared.analytics1.trackUserEngagement(UserEngagement(screenName: "Screen_name", textSize: nil, authType: "noAuth"), receiverIdentifier: "")
         AppDelegate.shared.analytics1.trackEvent(name: "add_to_cart_test", parameters: [
             "param1": "value1",
             "param2": "param2"

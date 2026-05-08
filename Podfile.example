@@ -9,12 +9,12 @@ use_modular_headers!
 
 target 'YourAppTarget' do
   # WBMAnalytics - Full library
-  pod 'WBMAnalytics', '~> 3.4.4'
+  pod 'WBMAnalytics', '~> 3.5.7'
 
   target 'YourAppTargetTests' do
     inherit! :search_paths
     # Pods for testing
-    pod 'WBMAnalytics/Tests', '~> 3.4.4'
+    pod 'WBMAnalytics/Tests', '~> 3.5.7'
   end
 
   target 'YourAppTargetUITests' do

@@ -14,12 +14,14 @@ extension Event {
     ///   - data: The data associated with the event.
     ///   - time: The time the event occurred.
     ///   - eventNum: Event number
-    init(name: String, data: [String: Any], time: String, eventNum: Int) {
+    ///   - sessionValue: Unique session value
+    init(name: String, data: [String: Any], time: String, eventNum: Int, sessionValue: String) {
         self = [
             Self.nameKey: name,
             Self.dataKey: data,
             Self.eventTimeKey: time,
-            Self.eventNumKey: eventNum
+            Self.eventNumKey: eventNum,
+            Self.sessionValueKey: sessionValue
         ]
     }
 
@@ -36,6 +38,7 @@ private extension Event {
     static let nameKey: String = "name"
     static let eventTimeKey: String = "event_time"
     static let eventNumKey: String = "event_num"
+    static let sessionValueKey: String = "session_value"
 
     /// Enum to hold constant parameter names.
     enum Parameter {

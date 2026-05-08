@@ -7,7 +7,7 @@ SDK для логирования событий в IOS-приложении. С
 SDK поставляется через SPM, для добавления в свой проект достаточно добавить в свой проект 
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "3.4.4")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "3.5.7")
 ```
 
 ## 🚀 Launch in app
@@ -156,6 +156,11 @@ public protocol WBAnalyticsDelegateProtocol: AnyObject {
 
 Метод делегата didResolveAttributedLink вызовется только если в атрибуцированных данных будет найдена ссылка. 
 
+### 6. Трекинг IDFA
+
+```swift
+service.setIDFA(<idfa>)
+```
 
 ## 📝 F.A.Q
 

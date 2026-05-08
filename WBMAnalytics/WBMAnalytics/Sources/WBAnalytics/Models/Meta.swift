@@ -12,8 +12,16 @@ extension Meta {
     /// - Parameters:
     ///   - networkType: The type of network connection.
     ///   - deviceId: The unique device identifier.
+    ///   - idfa: The unique advertising identifier.
     ///   - isNewUser: A boolean indicating whether the user is new.
-    init(networkType: WBMNetworkType, deviceId: String, isNewUser: Bool) {
+    ///   - localDate: meta event time
+    init(
+        networkType: WBMNetworkType,
+        deviceId: String,
+        idfa: String,
+        isNewUser: Bool,
+        localDate: Date = Date()
+    ) {
         let locale = Locale.current.languageCode ?? ""
         let sdkVersion = (Bundle.main.infoDictionary?["DTPlatformVersion"] as? String) ?? ""
         let product = UIDevice.current.systemName
@@ -22,7 +30,7 @@ extension Meta {
         let timeZoneOffset = String(format: "%+.2d%.2d", timeZoneOffsetSeconds / 3600, (abs(timeZoneOffsetSeconds) / 60) % 60)
         let timeZoneIdentifier = TimeZone.current.identifier
         let networkType = networkType.rawValue
-        let localTime = Date().asString
+        let localTime = localDate.asString
         let appId = (Bundle.main.infoDictionary?["CFBundleIdentifier"] as? String) ?? ""
         let appVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let analyticsSDKVersion = TagVersion.version
@@ -49,6 +57,7 @@ extension Meta {
             "mobile_device_type": getDeviceType(),
             "is_new_user": isNewUser,
             "timezone": timeZoneIdentifier,
+            "device_ad_id": idfa
         ]
     }
 }

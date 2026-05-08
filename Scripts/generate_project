@@ -1,0 +1,10 @@
+#!/bin/bash
+
+CURRENT_DIR=$( pwd )
+
+which -s xcodegen
+if [[ $? != 0 ]]; then
+    brew install xcodegen
+fi
+
+xcodegen generate --spec ${CURRENT_DIR}/WBMAnalytics/WBMAnalytics.yml

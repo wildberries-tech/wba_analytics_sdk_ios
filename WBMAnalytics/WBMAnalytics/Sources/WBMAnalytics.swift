@@ -109,6 +109,18 @@ public final class WBMAnalytics {
         }
     }
 
+    public func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+        receivers.values.forEach {
+            $0.setOnSessionValueUpdated(handler)
+        }
+    }
+
+    public func setIDFA(_ idfa: @escaping () -> String) {
+        receivers.values.forEach {
+            $0.setIDFA(idfa)
+        }
+    }
+
     public func showLogsViewController() -> UIViewController {
         ReceiversListViewController(receivers: receivers)
     }

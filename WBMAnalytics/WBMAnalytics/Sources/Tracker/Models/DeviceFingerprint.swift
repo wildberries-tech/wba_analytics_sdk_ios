@@ -21,4 +21,13 @@ struct DeviceFingerprint: Codable {
     /// Operating system version (e.g., 18.0)
     let version_os: String // swiftlint:disable:this identifier_name
 
+    var asUserAttributes: [String: String] {
+        [
+            "screen_resolution": screen_resolution,
+            "pixel_ratio": pixel_ratio,
+            "language": language,
+            "timezone": timezone,
+            "user_agent": user_agent
+        ]
+    }
 }

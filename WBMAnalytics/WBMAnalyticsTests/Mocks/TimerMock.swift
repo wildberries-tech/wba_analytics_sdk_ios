@@ -13,8 +13,9 @@ public final class TimerMock: TimerProtocol {
         scheduledTimerWithRepeatsBlockReceivedArguments = nil
         scheduledTimerWithRepeatsBlockWasCalled = 0
         timerReceivedArguments = nil
-        timerStub = nil
+        timerStub = TimerMock()
         timerWasCalled = 0
+        scheduledTimerWithRepeatsBlockStub = TimerMock()
     }
 
     public init() { }
@@ -23,7 +24,7 @@ public final class TimerMock: TimerProtocol {
 
     public static var timerWasCalled = 0
     public static var timerReceivedArguments: (timeInterval: TimeInterval, repeats: Bool, block: (Timer) -> Void)?
-    public static var timerStub: TimerProtocol!
+    public static var timerStub: TimerProtocol = TimerMock()
 
     public static func timer(with timeInterval: TimeInterval, repeats: Bool, block: @escaping (Timer) -> Void) -> TimerProtocol {
         timerWasCalled += 1
@@ -50,7 +51,7 @@ public final class TimerMock: TimerProtocol {
         repeats: Bool,
         block: (Timer) -> Void
     )?
-    public static var scheduledTimerWithRepeatsBlockStub: TimerProtocol!
+    public static var scheduledTimerWithRepeatsBlockStub: TimerProtocol = TimerMock()
 
     public static func scheduledTimer(
         with timeInterval: TimeInterval,

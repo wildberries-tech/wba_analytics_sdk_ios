@@ -14,11 +14,14 @@ final class MetaTests: XCTestCase {
         let hours = timeZoneOffsetSeconds / 3600
         let minutes = abs(timeZoneOffsetSeconds / 60) % 60
         let timeZoneOffset = String(format: "%+.2d%02d", hours, minutes)
+        let date = Date()
         // when
         let meta = Meta(
             networkType: TestData.networkType,
             deviceId: TestData.deviceID,
-            isNewUser: TestData.isNewUser
+            idfa: TestData.idfa,
+            isNewUser: TestData.isNewUser,
+            localDate: date
         )
         // then
         if #available(iOS 16, *) {
@@ -54,7 +57,7 @@ final class MetaTests: XCTestCase {
         )
         XCTAssertEqual(
             meta["local_time"] as? String,
-            Date().asString
+            date.asString
         )
         XCTAssertEqual(
             meta["app_id"] as? String,
@@ -92,6 +95,10 @@ final class MetaTests: XCTestCase {
             meta["resolution_height"] as? CGFloat,
             UIScreen.main.bounds.size.height * UIScreen.main.scale
         )
+        XCTAssertEqual(
+            meta["device_ad_id"] as? String,
+            TestData.idfa
+        )
     }
 
 }
@@ -108,10 +115,11 @@ private extension MetaTests {
         static let systemVersion: String = "17.2"
         static let appID: String = "com.apple.dt.xctest.tool"
         static let appVersion: String = "16.0"
-        static let analyticsSDKVersion: String = "3.5.4"
+        static let analyticsSDKVersion: String = "3.5.7"
         static let deviceType: String = "computer"
         static let manufacturer: String = "Apple"
         static let model: String = "arm64"
         static let isNewUser = true
+        static let idfa = "01234567-1234-1234-1234-123456789012"
     }
 }

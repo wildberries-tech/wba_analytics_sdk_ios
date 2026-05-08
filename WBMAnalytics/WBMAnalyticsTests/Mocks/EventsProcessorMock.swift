@@ -104,4 +104,27 @@ final class EventsProcessorMock: EventsProcessor {
         self.setUserTokenReceivedValue = token
     }
 
+    private(set) var setSessionValueReceivedValue: String?
+    private(set) var setSessionValueWasCalled: Int = 0
+
+    func setSessionValue(_ value: String?) {
+        setSessionValueReceivedValue = value
+        setSessionValueWasCalled += 1
+    }
+
+    private(set) var setOnSessionValueUpdatedReceivedValue: ((String?) -> Void)?
+    private(set) var setOnSessionValueUpdatedWasCalled: Int = 0
+
+    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+        setOnSessionValueUpdatedReceivedValue = handler
+        setOnSessionValueUpdatedWasCalled += 1
+    }
+
+    private(set) var setIDFAWasCalled: Int = 0
+    private(set) var setIDFAReceivedValue: (() -> String)?
+
+    func setIDFA(_ idfa: @escaping () -> String) {
+        setIDFAWasCalled += 1
+        setIDFAReceivedValue = idfa
+    }
 }

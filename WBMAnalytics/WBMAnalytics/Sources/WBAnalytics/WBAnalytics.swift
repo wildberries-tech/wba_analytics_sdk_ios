@@ -34,7 +34,8 @@ public class WBAnalytics {
         ),
         logger: logger,
         analyticsURL: analyticsURL,
-        interceptor: interceptor
+        interceptor: interceptor,
+        appStartTracker: AppStartTracker()
     )
 
     lazy var logger = {
@@ -118,6 +119,22 @@ public class WBAnalytics {
         processor.setDeviceId(deviceId)
     }
 
+    /// Sets a unique session value
+    public func setSessionValue(_ value: String?) {
+        processor.setSessionValue(value)
+    }
+
+    /// Set a handler called when session value updates
+    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+        processor.setOnSessionValueUpdated(handler)
+    }
+
+    /// Set IDFA
+    /// - Parameter idfa: Unique advertising identifier
+    public func setIDFA(_ idfa: @escaping () -> String) {
+        processor.setIDFA(idfa)
+    }
+
     /// This function is used to set common parameters for the analytics.
     public func setCommonParameters(_ parameters: [String: Any]) {
         processor.setCommonParameters(parameters)
@@ -174,33 +191,20 @@ public class WBAnalytics {
                 // Prepare parameters with fingerprint data as user_attributes and attribution response as fingerprint_gathered
                 var parameters: [String: Any] = [:]
 
-                if let fingerprintData = try? JSONEncoder().encode(attributionResult.fingerprintData),
-                    let fingerprintDict = (try? JSONSerialization.jsonObject(with: fingerprintData) as? [String: Any]) {
-                    parameters["user_attributes"] = fingerprintDict
-                }
-
                 // Add attribution response as fingerprint_gathered
                 if let attributionData = attributionResult.attributionData {
-                    var fingerprintGathered: [String: Any] = [:]
-                    if let link = attributionData.link {
-                        fingerprintGathered["link"] = link
-                    }
-                    if let attributionParameters = attributionData.parametersAsAny() {
-                        fingerprintGathered.merge(attributionParameters) { _, new in new }
-                    }
-
-                    parameters["fingerprint_gathered"] = fingerprintGathered
-                    // Also include attribution parameters at the root level for backward compatibility
                     if let attributionParameters = attributionData.parametersAsAny() {
                         parameters.merge(attributionParameters) { _, new in new }
                     }
+
+                    if let deeplink = attributionData.deeplink {
+                        parameters["deeplink"] = deeplink
+                    }
+
                     // resolve a link
-                    if let link = attributionData.link, let url = URL(string: link) {
+                    if let deeplink = attributionData.deeplink, let url = URL(string: deeplink) {
                         self?.delegate?.didResolveAttributedLink(url)
                     }
-                } else {
-                    // No attribution data found
-                    parameters["fingerprint_gathered"] = [:]
                 }
                 // report install
                 self?.reportInstall(parameters: parameters)

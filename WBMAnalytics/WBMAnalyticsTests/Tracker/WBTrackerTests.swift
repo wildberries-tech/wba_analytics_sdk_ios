@@ -15,7 +15,7 @@ final class AttributionDataTests: XCTestCase {
         // Given
         let json = """
         {
-            "link": "https://example.com",
+            "deeplink": "https://example.com",
             "utm_source": "google",
             "utm_medium": "cpc",
             "custom_param": "value1"
@@ -26,7 +26,7 @@ final class AttributionDataTests: XCTestCase {
         let attribution = try JSONDecoder().decode(AttributionData.self, from: json)
         
         // Then
-        XCTAssertEqual(attribution.link, "https://example.com")
+        XCTAssertEqual(attribution.deeplink, "https://example.com")
         XCTAssertEqual(attribution.parameters?["utm_source"]?.stringValue, "google")
         XCTAssertEqual(attribution.parameters?["utm_medium"]?.stringValue, "cpc")
         XCTAssertEqual(attribution.parameters?["custom_param"]?.stringValue, "value1")
@@ -37,7 +37,7 @@ final class AttributionDataTests: XCTestCase {
         // Given
         let json = """
         {
-            "link": "https://example.com",
+            "deeplink": "https://example.com",
             "utm_source": "google",
             "categories": ["electronics", "smartphones"],
             "count": 42,
@@ -55,7 +55,7 @@ final class AttributionDataTests: XCTestCase {
         let attribution = try JSONDecoder().decode(AttributionData.self, from: json)
         
         // Then
-        XCTAssertEqual(attribution.link, "https://example.com")
+        XCTAssertEqual(attribution.deeplink, "https://example.com")
         XCTAssertEqual(attribution.parameters?["utm_source"]?.stringValue, "google")
         XCTAssertEqual(attribution.parameters?["categories"]?.arrayValue?.count, 2)
         XCTAssertEqual(attribution.parameters?["categories"]?.arrayValue?[0].stringValue, "electronics")
@@ -72,7 +72,7 @@ final class AttributionDataTests: XCTestCase {
         // Given
         let json = """
         {
-            "link": "https://test.com"
+            "deeplink": "https://test.com"
         }
         """.data(using: .utf8)!
         
@@ -80,7 +80,7 @@ final class AttributionDataTests: XCTestCase {
         let attribution = try JSONDecoder().decode(AttributionData.self, from: json)
         
         // Then
-        XCTAssertEqual(attribution.link, "https://test.com")
+        XCTAssertEqual(attribution.deeplink, "https://test.com")
         XCTAssertFalse(attribution.isEmpty)
     }
     
@@ -88,7 +88,7 @@ final class AttributionDataTests: XCTestCase {
         // Given
         let json = """
         {
-            "link": null,
+            "deeplink": null,
             "utm_campaign": "summer2024"
         }
         """.data(using: .utf8)!
@@ -97,7 +97,7 @@ final class AttributionDataTests: XCTestCase {
         let attribution = try JSONDecoder().decode(AttributionData.self, from: json)
         
         // Then
-        XCTAssertNil(attribution.link)
+        XCTAssertNil(attribution.deeplink)
         XCTAssertEqual(attribution.parameters?["utm_campaign"]?.stringValue, "summer2024")
         XCTAssertFalse(attribution.isEmpty)
     }
@@ -110,7 +110,7 @@ final class AttributionDataTests: XCTestCase {
         let attribution = try JSONDecoder().decode(AttributionData.self, from: json)
         
         // Then
-        XCTAssertNil(attribution.link)
+        XCTAssertNil(attribution.deeplink)
         XCTAssertNil(attribution.parameters)
         XCTAssertFalse(attribution.isEmpty)
     }
@@ -128,7 +128,7 @@ final class AttributionDataTests: XCTestCase {
         ]
         let attribution = AttributionData(
             isEmpty: false,
-            link: "https://example.com",
+            deeplink: "https://example.com",
             parameters: parameters
         )
         
@@ -137,7 +137,7 @@ final class AttributionDataTests: XCTestCase {
         let decoded = try JSONDecoder().decode(AttributionData.self, from: encoded)
         
         // Then
-        XCTAssertEqual(decoded.link, attribution.link)
+        XCTAssertEqual(decoded.deeplink, attribution.deeplink)
         XCTAssertEqual(decoded.isEmpty, attribution.isEmpty)
         XCTAssertEqual(decoded.parameters?["utm_source"]?.stringValue, "google")
         XCTAssertEqual(decoded.parameters?["count"]?.intValue, 42)
@@ -361,7 +361,7 @@ final class UserDefaultsAttributionStorageTests: XCTestCase {
         // Given
         let attribution = AttributionData(
             isEmpty: false,
-            link: "https://test.com",
+            deeplink: "https://test.com",
             parameters: ["utm_source": .string("test")]
         )
         
@@ -371,7 +371,7 @@ final class UserDefaultsAttributionStorageTests: XCTestCase {
         
         // Then
         XCTAssertNotNil(loaded)
-        XCTAssertEqual(loaded?.link, "https://test.com")
+        XCTAssertEqual(loaded?.deeplink, "https://test.com")
         XCTAssertEqual(loaded?.parameters?["utm_source"]?.stringValue, "test")
     }
     
@@ -385,8 +385,8 @@ final class UserDefaultsAttributionStorageTests: XCTestCase {
     
     func testSaveOverwritesPreviousData() {
         // Given
-        let firstAttribution = AttributionData(isEmpty: false, link: "https://first.com", parameters: nil)
-        let secondAttribution = AttributionData(isEmpty: false, link: "https://second.com", parameters: nil)
+        let firstAttribution = AttributionData(isEmpty: false, deeplink: "https://first.com", parameters: nil)
+        let secondAttribution = AttributionData(isEmpty: false, deeplink: "https://second.com", parameters: nil)
 
         // When
         sut.save(firstAttribution)
@@ -394,14 +394,56 @@ final class UserDefaultsAttributionStorageTests: XCTestCase {
         let loaded = sut.load()
         
         // Then
-        XCTAssertEqual(loaded?.link, "https://second.com")
+        XCTAssertEqual(loaded?.deeplink, "https://second.com")
     }
 }
 
 // MARK: - DeviceFingerprintService Tests
 
 final class DeviceFingerprintServiceTests: XCTestCase {
-    
+
+    private final class AttributionURLProtocol: URLProtocol {
+        static var responseCode: Int = 404
+        static var responseData: Data?
+        static var responseError: Error?
+
+        override class func canInit(with request: URLRequest) -> Bool {
+            return request.url?.absoluteString == "https://wildtracker.wb.ru/fingerprint/check"
+        }
+
+        override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+            return request
+        }
+
+        override func startLoading() {
+            if let error = Self.responseError {
+                client?.urlProtocol(self, didFailWithError: error)
+                return
+            }
+
+            guard
+                let url = request.url,
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: Self.responseCode,
+                    httpVersion: nil,
+                    headerFields: nil
+                )
+            else {
+                client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+                return
+            }
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+
+            if let data = Self.responseData {
+                client?.urlProtocol(self, didLoad: data)
+            }
+            client?.urlProtocolDidFinishLoading(self)
+        }
+
+        override func stopLoading() { }
+    }
+
     private var sut: DeviceFingerprintService!
     private var loggerMock: LoggerMock!
     private var collectorMock: DeviceFingerprintCollectorMock!
@@ -409,6 +451,10 @@ final class DeviceFingerprintServiceTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
+        _ = URLProtocol.registerClass(AttributionURLProtocol.self)
+        AttributionURLProtocol.responseCode = 404
+        AttributionURLProtocol.responseData = nil
+        AttributionURLProtocol.responseError = nil
         loggerMock = LoggerMock()
         collectorMock = DeviceFingerprintCollectorMock()
         storageMock = AttributionStorageMock()
@@ -425,12 +471,13 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         loggerMock = nil
         collectorMock = nil
         storageMock = nil
+        URLProtocol.unregisterClass(AttributionURLProtocol.self)
         super.tearDown()
     }
     
     func testCheckAttributionWhenAlreadySaved() {
         // Given
-        let existingAttribution = AttributionData(isEmpty: true, link: nil, parameters: nil)
+        let existingAttribution = AttributionData(isEmpty: true, deeplink: nil, parameters: nil)
         storageMock.attributionData = existingAttribution
         storageMock.attributionDidRequested = true
         let expectation = expectation(description: "Attribution check completion")
@@ -503,7 +550,7 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         
         let mockAttributionData = AttributionData.create(
             isEmpty: false,
-            link: "https://example.com/deeplink",
+            deeplink: "https://example.com/deeplink",
             parametersAny: [
                 "utm_source": "google",
                 "utm_medium": "cpc",
@@ -524,7 +571,7 @@ final class DeviceFingerprintServiceTests: XCTestCase {
         XCTAssertEqual(attributionResult.fingerprintData.device, "iPhone")
         
         XCTAssertNotNil(attributionResult.attributionData)
-        XCTAssertEqual(attributionResult.attributionData?.link, "https://example.com/deeplink")
+        XCTAssertEqual(attributionResult.attributionData?.deeplink, "https://example.com/deeplink")
         XCTAssertEqual(attributionResult.attributionData?.parametersAsAny()?["utm_source"] as? String, "google")
         XCTAssertEqual(attributionResult.attributionData?.parametersAsAny()?["utm_medium"] as? String, "cpc")
         XCTAssertEqual(attributionResult.attributionData?.parametersAsAny()?["campaign_id"] as? String, "123456")

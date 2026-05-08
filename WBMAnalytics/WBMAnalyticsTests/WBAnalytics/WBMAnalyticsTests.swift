@@ -150,6 +150,52 @@ final class WBMAnalyticsTests: XCTestCase {
         XCTAssertEqual(receiver.trackUserEngagementReceivedValue, TestData.userEngagement)
     }
 
+    // MARK: setSessionValue
+
+    func testSetSessionValue() {
+        // given
+        let receiver = AnalyticsReceiverMock()
+        receiver.identifierStub = TestData.receiverIdentifier
+        let analytics = WBMAnalytics()
+        analytics.registerReceiver(receiver)
+        // when
+        receiver.setSessionValue(TestData.sessionValue)
+        // then
+        XCTAssertEqual(receiver.setSessionValueReceivedValue, TestData.sessionValue)
+        XCTAssertEqual(receiver.setSessionValueWasCalled, 1)
+    }
+
+    // MARK: setOnSessionValueUpdated
+
+    func testSetOnSessionValueUpdated() {
+        // given
+        let receiver = AnalyticsReceiverMock()
+        receiver.identifierStub = TestData.receiverIdentifier
+        let analytics = WBMAnalytics()
+        analytics.registerReceiver(receiver)
+        let handler: (String?) -> Void = { _ in }
+        // when
+        receiver.setOnSessionValueUpdated(handler)
+        // then
+        XCTAssertNotNil(receiver.setOnSessionValueUpdatedReceivedValue)
+        XCTAssertEqual(receiver.setOnSessionValueUpdatedWasCalled, 1)
+    }
+
+    // MARK: setIDFA
+
+    func testSetIDFA() {
+        let receiver = AnalyticsReceiverMock()
+        receiver.identifierStub = TestData.receiverIdentifier
+        let analytics = WBMAnalytics()
+        analytics.registerReceiver(receiver)
+        let idfaClosure: () -> String = { TestData.idfa }
+        // when
+        analytics.setIDFA(idfaClosure)
+        // then
+        XCTAssertEqual(receiver.setIDFAWasCalled, 1)
+        XCTAssertNotNil(receiver.setIDFAReceivedValue?(), TestData.idfa)
+    }
+
     // MARK: WBAnalyticsDelegateProtocol Tests
 
     func testWBAnalyticsSetupWithDelegate() {
@@ -299,7 +345,7 @@ final class WBMAnalyticsTests: XCTestCase {
         )
         let mockAttributionData = AttributionData.create(
             isEmpty: false,
-            link: "https://example.com/deeplink",
+            deeplink: "https://example.com/deeplink",
             parametersAny: [
                 "utm_source": "google",
                 "utm_medium": "cpc",
@@ -320,8 +366,8 @@ final class WBMAnalyticsTests: XCTestCase {
         // Add attribution response as fingerprint_gathered
         if let attributionData = attributionResult.attributionData {
             var fingerprintGathered: [String: Any] = [:]
-            if let link = attributionData.link {
-                fingerprintGathered["link"] = link
+            if let deeplink = attributionData.deeplink {
+                fingerprintGathered["deeplink"] = deeplink
             }
             if let attributionParameters = attributionData.parametersAsAny() {
                 // Merge attribution parameters at the same level as link
@@ -350,7 +396,7 @@ final class WBMAnalyticsTests: XCTestCase {
         }
         // Check fingerprint_gathered contains flattened attribution data
         if let fingerprintGathered = capturedParameters["fingerprint_gathered"] as? [String: Any] {
-            XCTAssertEqual(fingerprintGathered["link"] as? String, "https://example.com/deeplink")
+            XCTAssertEqual(fingerprintGathered["deeplink"] as? String, "https://example.com/deeplink")
             XCTAssertEqual(fingerprintGathered["utm_source"] as? String, "google")
             XCTAssertEqual(fingerprintGathered["utm_medium"] as? String, "cpc")
             XCTAssertEqual(fingerprintGathered["campaign_id"] as? String, "123456")
@@ -373,7 +419,9 @@ private extension WBMAnalyticsTests {
         static let parameters: [String: Int] = ["123": 2]
         static let receiverIdentifier: String = "receiverIdentifier"
         static let name: String = "name"
-        static let userEngagement: UserEngagement = .init(screenName: "name", textSize: .large)
+        static let sessionValue = "1587023248356386046"
+        static let userEngagement: UserEngagement = .init(screenName: "name", textSize: .large, authType: "noAuth")
+        static let idfa = "01234567-1234-1234-1234-123456789012"
     }
 }
 

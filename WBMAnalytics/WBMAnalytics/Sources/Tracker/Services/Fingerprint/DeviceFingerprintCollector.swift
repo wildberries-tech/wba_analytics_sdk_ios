@@ -2,8 +2,6 @@
 
 import Foundation
 import UIKit
-import SystemConfiguration
-import AdSupport
 
 /// Class responsible for collecting device fingerprint (screen, platform, language, timezone, etc.)
 class DeviceFingerprintCollector {
@@ -28,18 +26,16 @@ class DeviceFingerprintCollector {
 
     /// Generates a mobile browser-like user agent string
     private func generateUserAgent() -> String {
-        let deviceType = Device.type(detectSimulator: true)
-        let systemVersion = UIDevice.current.systemVersion.replacingOccurrences(of: ".", with: "_")
+        let deviceIdiom = DeviceInfo.current.userInterfaceIdiom
+        let systemVersion = DeviceInfo.current.systemVersion.replacingOccurrences(of: ".", with: "_")
 
         // Determine device platform string for user agent
         let platformString: String
-        switch deviceType {
-        case .iPhone:
+        switch deviceIdiom {
+        case .phone:
             platformString = "iPhone; CPU iPhone OS \(systemVersion) like Mac OS X"
-        case .iPad:
+        case .pad:
             platformString = "iPad; CPU OS \(systemVersion) like Mac OS X"
-        case .iPod:
-            platformString = "iPod touch; CPU iPhone OS \(systemVersion) like Mac OS X"
         default:
             platformString = "iPhone; CPU iPhone OS \(systemVersion) like Mac OS X"
         }
@@ -55,14 +51,14 @@ class DeviceFingerprintCollector {
 
     /// Collects device fingerprint for the current device
     func collect() -> DeviceFingerprint {
-        let size = Device.version(detectSimulator: true).physicalSize
+        let size = DeviceInfo.current.screenPixelsSize
         let screenResolution = "\(Int(size.width))x\(Int(size.height))"
-        let pixelRatio = "\(Int(UIScreen.main.currentMode?.pixelAspectRatio ?? 2.0))"
-        let platform = UIDevice.current.model
+        let pixelRatio = "\(Int(DeviceInfo.current.screenScale))"
+        let platform = DeviceInfo.current.deviceType
         var language = String(Locale.preferredLanguages.first?.split(separator: "-").first ?? "")
         let timezone = TimeZone.current.identifier
-        let device = Device.type(detectSimulator: true).rawValue
-        let versionOS = UIDevice.current.systemVersion
+        let device = DeviceInfo.current.deviceType
+        let versionOS = DeviceInfo.current.systemVersion
 
         #if targetEnvironment(simulator)
         if language == "en" {

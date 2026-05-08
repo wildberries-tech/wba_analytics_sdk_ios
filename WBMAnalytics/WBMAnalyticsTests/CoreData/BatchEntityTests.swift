@@ -9,7 +9,7 @@ import CoreData
 
 final class BatchEntityTests: XCTestCase {
 
-    func testSchema () {
+    func testSchema() {
         // when
         let entity = BatchEntity.schema
 

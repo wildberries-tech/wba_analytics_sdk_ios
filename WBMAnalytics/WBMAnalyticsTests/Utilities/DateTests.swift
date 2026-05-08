@@ -11,12 +11,13 @@ final class DateTests: XCTestCase {
     func testAsString() {
         // given
         let date = Date()
-        let dateFormate = DateFormatter()
-        dateFormate.dateFormat = "yyyy-MM-dd'T'HH:mm:ssXXXXX"
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
         // when
         let dateString = date.asString
         // then
-        XCTAssertEqual(dateString, dateFormate.string(from: date))
+        XCTAssertEqual(dateString, dateFormatter.string(from: date))
     }
 
 }

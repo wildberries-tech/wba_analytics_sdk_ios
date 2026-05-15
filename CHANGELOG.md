@@ -2,6 +2,8 @@
 
 ## [CURRENT](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/tree/master)
 
+- Пакет `WBMAnalytics` переименован в `WildAnalyticsSDK`. Соответственно обновлены имя SPM-продукта/таргета, podspec, module name, импорт (`import WildAnalyticsSDK`), названия папок, файлов, схем Xcode, bundle identifiers и публичный класс-точка входа `WBMAnalytics` → `WildAnalyticsSDK`. Тип `WBMNetworkType` переименован в `WildNetworkType`.
+
 ## [v3.4.4](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/tags/3.4.4)
 
 - Переработан механизм отправки app_install

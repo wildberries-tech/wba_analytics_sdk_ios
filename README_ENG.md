@@ -1,4 +1,4 @@
-# WBMAnalytics
+# WildAnalyticsSDK
 
 SDK for logging events in iOS applications. Events are sequentially grouped into batches and sent to the server. Configuration is supported for production and debug environments. The count of sent events and batches is tracked to control data loss. Events are stored in CoreData until they are sent. In case of network absence, events will be sent when the network becomes available.
 
@@ -16,9 +16,9 @@ The application assumes one analytics instance that can support multiple receive
 
 To create a WBAnalyticsReceiver instance, you need to pass several mandatory parameters to its initializer:
     
-- **environment:** Application environment, can be .production or .test, if needed you can set your own apiKey .custom("apiKey"). ([example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
+- **environment:** Application environment, can be .production or .test, if needed you can set your own apiKey .custom("apiKey"). ([example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL to which analytics data will be sent.
-- **isFirstLaunch:** Flag indicating whether the current app launch is the first one. (stored somewhere in your code, for example in UserDefaults [example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
+- **isFirstLaunch:** Flag indicating whether the current app launch is the first one. (stored somewhere in your code, for example in UserDefaults [example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
 - **loggingOptions:** Logging settings, including logging level and file writing. [Details](.Docs/LoggingOptions.md)
 - **networkTypeProvider:** Object providing information about the current network type.
 - **batchConfig:** Batch data sending configuration.
@@ -27,7 +27,7 @@ For each receiver, you can set your own parameters and your own apiKey, then the
 
 Example receiver initialization:
 ```swift
-let service = WBMAnalytics()
+let service = WildAnalyticsSDK()
 
 let apiKey = "<PUT API KEY HERE>"
 

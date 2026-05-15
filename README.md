@@ -1,4 +1,4 @@
-# WBMAnalytics
+# WildAnalyticsSDK
 
 SDK для логирования событий в IOS-приложении. События последовательно группируются в батчи и отправляются на сервер. Поддерживается конфигурация для production и debug окружений. Ведется подсчет отправленных событий и батчей для контроля потери данных. До момента отправки события хранятся в CoreData. В случае отсутствия сети события будут отправлены при её появлении. 
 
@@ -16,9 +16,9 @@ SDK поставляется через SPM, для добавления в св
 
 Для создания экземпляра WBAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
     
-- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
+- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL, на который будут отправляться аналитические данные.
-- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
+- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
 - **enableAttributionTracking:** Включение/выключение автоматической атрибуции трафика. 
 - **loggingOptions:** Настройки логирования, включая уровень логирования и файловую запись. [Подробнее](.Docs/LoggingOptions.md)
 - **networkTypeProvider:** Объект, предоставляющий информацию о текущем типе сети.
@@ -28,7 +28,7 @@ SDK поставляется через SPM, для добавления в св
 
 Пример инициализации ресивера:
 ```swift
-let service = WBMAnalytics()
+let service = WildAnalyticsSDK()
 
 let apiKey = "<PUT API KEY HERE>"
 

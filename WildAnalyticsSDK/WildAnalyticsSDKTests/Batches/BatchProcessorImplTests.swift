@@ -702,7 +702,7 @@ private extension BatchProcessorImplTests {
         static let appVersion = "16.0"
         static let model = "arm64"
         static let manufacturer = "Apple"
-        static let analyticsSdkVersion = "3.5.7"
+        static let analyticsSdkVersion = "4.0.0"
         static let validIDFA = "01234567-1234-1234-1234-123456789012"
         static let invalidIDFA = "00000000-0000-0000-0000-000000000000"
     }

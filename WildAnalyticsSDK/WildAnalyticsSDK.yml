@@ -1,0 +1,273 @@
+attributes:
+  BuildIndependentTargetsInParallel: '1'
+  LastSwiftUpdateCheck: '1500'
+  LastUpgradeCheck: '1500'
+  ORGANIZATIONNAME: Wildberries LLC
+
+name: WildAnalyticsSDK
+options:
+  defaultConfig: Release
+  groupSortPosition: top
+  transitivelyLinkDependencies: false
+
+packages:
+  WildAnalyticsSDK:
+    path: ..
+
+schemes:
+  WildAnalyticsSDK:
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+    build:
+      targets:
+        WildAnalyticsSDK:
+        - running
+        - testing
+        - profiling
+        - analyzing
+        - archiving
+    profile:
+      config: Release
+    run:
+      config: Debug
+
+  WildAnalyticsSDKTestApp:
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+    build:
+      targets:
+        WildAnalyticsSDKTestApp:
+        - running
+        - testing
+        - profiling
+        - analyzing
+        - archiving
+    profile:
+      config: Release
+    run:
+      config: Debug
+
+  WildAnalyticsSDKTestApp_tvOS:
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+    build:
+      targets:
+        WildAnalyticsSDKTestApp_tvOS:
+        - running
+        - testing
+        - profiling
+        - analyzing
+        - archiving
+    profile:
+      config: Release
+    run:
+      config: Debug
+
+  WildAnalyticsSDKTests:
+      analyze:
+        config: Debug
+      archive:
+        config: Release
+      build:
+        targets:
+          WildAnalyticsSDKTests:
+          - running
+          - testing
+      test:
+        targets:
+          - WildAnalyticsSDKTests
+      profile:
+        config: Release
+      run:
+        config: Debug
+
+  WildAnalyticsSDKTests_tvOS:
+      analyze:
+        config: Debug
+      archive:
+        config: Release
+      build:
+        targets:
+          WildAnalyticsSDKTests_tvOS:
+          - running
+          - testing
+      test:
+        targets:
+          - WildAnalyticsSDKTests_tvOS
+      profile:
+        config: Release
+      run:
+        config: Debug
+
+
+settings:
+  configs:
+    Debug:
+      CLANG_CXX_LANGUAGE_STANDARD: gnu++17
+      CURRENT_PROJECT_VERSION: '1'
+      IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+      MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
+      MTL_FAST_MATH: 'YES'
+      SDKROOT: iphoneos
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      SWIFT_OPTIMIZATION_LEVEL: -Onone
+      VERSIONING_SYSTEM: apple-generic
+      VERSION_INFO_PREFIX: ''
+    Release:
+      CLANG_CXX_LANGUAGE_STANDARD: gnu++17
+      CURRENT_PROJECT_VERSION: '1'
+      IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+      MTL_FAST_MATH: 'YES'
+      SDKROOT: iphoneos
+      SWIFT_COMPILATION_MODE: wholemodule
+      SWIFT_OPTIMIZATION_LEVEL: -O
+      VERSIONING_SYSTEM: apple-generic
+      VERSION_INFO_PREFIX: ''
+
+configs:
+  Debug: debug
+  Release: release
+
+targets:
+  WildAnalyticsSDK:
+    postCompileScripts:
+        - script: |
+            if [[ "$(uname -m)" == arm64 ]]; then
+                export PATH="/opt/homebrew/bin:$PATH"
+            fi
+
+            if which swiftlint > /dev/null; then
+                swiftlint
+            else
+                brew install swiftlint
+            fi
+          name: Swiftlint
+          basedOnDependencyAnalysis: false
+    productName: WildAnalyticsSDK
+    platform: iOS
+    settings:
+      base:
+        PRODUCT_MODULE_NAME: WildAnalyticsSDK
+      configs:
+        Debug:
+          CODE_SIGN_STYLE: Automatic
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          INFOPLIST_KEY_NSHumanReadableCopyright: ''
+          IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
+          SWIFT_EMIT_LOC_STRINGS: 'YES'
+          SWIFT_VERSION: '5.0'
+        Release:
+          CODE_SIGN_STYLE: Automatic
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          INFOPLIST_KEY_NSHumanReadableCopyright: ''
+          IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
+          SWIFT_EMIT_LOC_STRINGS: 'YES'
+          SWIFT_VERSION: '5.0'
+    sources:
+    - name: WildAnalyticsSDK
+      path: WildAnalyticsSDK
+    type: framework
+
+  WildAnalyticsSDKTests:
+    dependencies:
+    - target: WildAnalyticsSDK
+    platform: iOS
+    sources:
+    - name: WildAnalyticsSDKTests
+      path: WildAnalyticsSDKTests
+    type: bundle.unit-test
+
+  WildAnalyticsSDKTests_tvOS:
+    dependencies:
+    - package: WildAnalyticsSDK
+      product: WildAnalyticsSDK
+    platform: tvOS
+    sources:
+    - name: WildAnalyticsSDKTests
+      path: WildAnalyticsSDKTests
+    type: bundle.unit-test
+
+  
+    
+  WildAnalyticsSDKTestApp:
+    dependencies:
+    - target: WildAnalyticsSDK
+    platform: iOS
+    settings:
+      configs:
+        Debug:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+        Release:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+    sources:
+    - name: WildAnalyticsSDKTestApp
+      path: WildAnalyticsSDKTestApp
+    type: application
+
+  WildAnalyticsSDKTestApp_tvOS:
+    dependencies:
+    - package: WildAnalyticsSDK
+      product: WildAnalyticsSDK
+    platform: tvOS
+    settings:
+      configs:
+        Debug:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+          TVOS_DEPLOYMENT_TARGET: '13.0'
+          SDKROOT: appletvos
+          INFOPLIST_KEY_UILaunchStoryboardName: ''
+        Release:
+          ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: 'YES'
+          CODE_SIGN_STYLE: Automatic
+          CURRENT_PROJECT_VERSION: '1'
+          DEVELOPMENT_TEAM: 4Y4A396ZEB
+          GENERATE_INFOPLIST_FILE: 'YES'
+          MARKETING_VERSION: '0.0.1'
+          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
+          SWIFT_EMIT_LOC_STRINGS: 'NO'
+          SWIFT_VERSION: '5.0'
+          TVOS_DEPLOYMENT_TARGET: '13.0'
+          SDKROOT: appletvos
+          INFOPLIST_KEY_UILaunchStoryboardName: ''
+    sources:
+    - name: WildAnalyticsSDKTestApp
+      path: WildAnalyticsSDKTestApp
+      excludes:
+      - Base.lproj/**
+    type: application

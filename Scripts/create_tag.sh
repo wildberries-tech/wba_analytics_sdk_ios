@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Путь к файлу tagVersion.swift относительно текущей директории
-TAG_VERSION_FILE="./WBMAnalytics/WBMAnalytics/Sources/WBAnalytics/Models/Tag.swift"
+TAG_VERSION_FILE="./WildAnalyticsSDK/WildAnalyticsSDK/Sources/WBAnalytics/Models/Tag.swift"
 echo "Путь к TAG_VERSION_FILE: $TAG_VERSION_FILE"
 
 # Проверка существования файла

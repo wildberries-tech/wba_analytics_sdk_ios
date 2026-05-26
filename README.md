@@ -1,4 +1,4 @@
-# WBMAnalytics
+# WildAnalyticsSDK
 
 SDK для логирования событий в IOS-приложении. События последовательно группируются в батчи и отправляются на сервер. Поддерживается конфигурация для production и debug окружений. Ведется подсчет отправленных событий и батчей для контроля потери данных. До момента отправки события хранятся в CoreData. В случае отсутствия сети события будут отправлены при её появлении. 
 
@@ -7,18 +7,18 @@ SDK для логирования событий в IOS-приложении. С
 SDK поставляется через SPM, для добавления в свой проект достаточно добавить в свой проект 
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "3.5.7")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.0.0")
 ```
 
 ## 🚀 Launch in app
 
 В приложении подразумевается один инстанс аналитики который может поддерживает несколько ресиверов
 
-Для создания экземпляра WBAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
+Для создания экземпляра WildAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
     
-- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
+- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL, на который будут отправляться аналитические данные.
-- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBMAnalytics/WBMAnalyticsTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
+- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
 - **enableAttributionTracking:** Включение/выключение автоматической атрибуции трафика. 
 - **loggingOptions:** Настройки логирования, включая уровень логирования и файловую запись. [Подробнее](.Docs/LoggingOptions.md)
 - **networkTypeProvider:** Объект, предоставляющий информацию о текущем типе сети.
@@ -28,11 +28,11 @@ SDK поставляется через SPM, для добавления в св
 
 Пример инициализации ресивера:
 ```swift
-let service = WBMAnalytics()
+let service = WildAnalyticsSDK()
 
 let apiKey = "<PUT API KEY HERE>"
 
-let reciever1 = WBAnalyticsReceiver(
+let reciever1 = WildAnalyticsReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     loggingOptions: loggingOptions,
@@ -41,7 +41,7 @@ let reciever1 = WBAnalyticsReceiver(
 )
 reciever1.setup() // Важно сетапить перед использованием
 
-let reciever2 = WBAnalyticsReceiver(
+let reciever2 = WildAnalyticsReceiver(
     apiKey: "TestKey",
     isFirstLaunch: isFirstLaunch,
     loggingOptions: LoggingOptions.default,
@@ -131,7 +131,7 @@ SDK поддерживает возможность получения атри�
 
 
 ```swift
-let reciever1 = WBAnalyticsReceiver(
+let reciever1 = WildAnalyticsReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     enableAttributionTracking: true,
@@ -145,7 +145,7 @@ let reciever1 = WBAnalyticsReceiver(
 Структура делегата:
 
 ```swift
-public protocol WBAnalyticsDelegateProtocol: AnyObject {
+public protocol WildAnalyticsDelegateProtocol: AnyObject {
 
     /// Called when WB Tracker found an attributed deeplink that can be handled by the client
     /// - Parameter link: URL

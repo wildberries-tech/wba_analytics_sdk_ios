@@ -4,15 +4,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "WBMAnalytics",
+    name: "WildAnalyticsSDK",
     platforms: [
         .iOS(.v13),
         .tvOS(.v13)
     ],
     products: [
         .library(
-            name: "WBMAnalytics",
-            targets: ["WBMAnalytics"]
+            name: "WildAnalyticsSDK",
+            targets: ["WildAnalyticsSDK"]
         )
     ],
     dependencies: [
@@ -20,14 +20,14 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "WBMAnalytics",
+            name: "WildAnalyticsSDK",
             dependencies: [],
-            path: "./WBMAnalytics/WBMAnalytics/Sources"
+            path: "./WildAnalyticsSDK/WildAnalyticsSDK/Sources"
         ),
         .testTarget(
-            name: "WBMAnalyticsTests",
-            dependencies: ["WBMAnalytics"],
-            path: "./WBMAnalytics/WBMAnalyticsTests"
+            name: "WildAnalyticsSDKTests",
+            dependencies: ["WildAnalyticsSDK"],
+            path: "./WildAnalyticsSDK/WildAnalyticsSDKTests"
         )
     ]
 )

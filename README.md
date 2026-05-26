@@ -14,7 +14,7 @@ SDK поставляется через SPM, для добавления в св
 
 В приложении подразумевается один инстанс аналитики который может поддерживает несколько ресиверов
 
-Для создания экземпляра WBAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
+Для создания экземпляра WildAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
     
 - **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL, на который будут отправляться аналитические данные.
@@ -32,7 +32,7 @@ let service = WildAnalyticsSDK()
 
 let apiKey = "<PUT API KEY HERE>"
 
-let reciever1 = WBAnalyticsReceiver(
+let reciever1 = WildAnalyticsReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     loggingOptions: loggingOptions,
@@ -41,7 +41,7 @@ let reciever1 = WBAnalyticsReceiver(
 )
 reciever1.setup() // Важно сетапить перед использованием
 
-let reciever2 = WBAnalyticsReceiver(
+let reciever2 = WildAnalyticsReceiver(
     apiKey: "TestKey",
     isFirstLaunch: isFirstLaunch,
     loggingOptions: LoggingOptions.default,
@@ -131,7 +131,7 @@ SDK поддерживает возможность получения атри�
 
 
 ```swift
-let reciever1 = WBAnalyticsReceiver(
+let reciever1 = WildAnalyticsReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     enableAttributionTracking: true,
@@ -145,7 +145,7 @@ let reciever1 = WBAnalyticsReceiver(
 Структура делегата:
 
 ```swift
-public protocol WBAnalyticsDelegateProtocol: AnyObject {
+public protocol WildAnalyticsDelegateProtocol: AnyObject {
 
     /// Called when WB Tracker found an attributed deeplink that can be handled by the client
     /// - Parameter link: URL

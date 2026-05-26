@@ -196,7 +196,7 @@ final class WildAnalyticsSDKTests: XCTestCase {
         XCTAssertNotNil(receiver.setIDFAReceivedValue?(), TestData.idfa)
     }
 
-    // MARK: WBAnalyticsDelegateProtocol Tests
+    // MARK: WildAnalyticsDelegateProtocol Tests
 
     func testWBAnalyticsSetupWithDelegate() {
         // given
@@ -438,7 +438,7 @@ private extension WildAnalyticsSDKTests {
         // And then we just declare the properties we want to test:
         var receivers: [String: AnalyticsReceiver]! { extract() }
         var receiversSetupStatuses: [String: Bool]! { extract() }
-        var delegate: WBAnalyticsDelegateProtocol? { extract() }
+        var delegate: WildAnalyticsDelegateProtocol? { extract() }
     }
 
     final class WBAnalyticsMirror: MirrorObject {
@@ -447,6 +447,6 @@ private extension WildAnalyticsSDKTests {
             super.init(reflecting: counter)
         }
 
-        var delegate: WBAnalyticsDelegateProtocol? { extract() }
+        var delegate: WildAnalyticsDelegateProtocol? { extract() }
     }
 }

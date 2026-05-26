@@ -6,9 +6,9 @@ import XCTest
 
 @testable import WildAnalyticsSDK
 
-final class WBAnalyticsReceiverTests: XCTestCase {
+final class WildAnalyticsReceiverTests: XCTestCase {
 
-    private var receiver: WBAnalyticsReceiver!
+    private var receiver: WildAnalyticsReceiver!
     private var networkMock: NetworkTypeProviderMock!
 
     override func setUp() {
@@ -33,9 +33,9 @@ final class WBAnalyticsReceiverTests: XCTestCase {
 
 }
 
-private extension WBAnalyticsReceiverTests {
+private extension WildAnalyticsReceiverTests {
     enum TestData {
-        static let identifier = "ru.wildberries.receiver_wbanalyticsreceiver"
+        static let identifier = "ru.wildberries.receiver_wildanalyticsreceiver"
         static let url = URL(string: "example.com")!
     }
 }

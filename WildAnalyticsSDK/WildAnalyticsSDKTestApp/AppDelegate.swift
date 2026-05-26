@@ -23,7 +23,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let isFirstLaunch = !UserDefaults.standard.bool(forKey: "isFirstLaunch")
         let url = URL(string: "https://wba.wb.ru/m/batch")!
         let apiKey = "TestApiKey1"
-        let reciever1 = WBAnalyticsReceiver(
+        let reciever1 = WildAnalyticsReceiver(
             apiKey: apiKey,
             analyticsURL: url,
             isFirstLaunch: isFirstLaunch,
@@ -36,7 +36,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         reciever1.setup()
         analytics1.registerReceiver(reciever1)
         let apiKey2 = "TestApiKey2="
-        let reciever2 = WBAnalyticsReceiver(
+        let reciever2 = WildAnalyticsReceiver(
             apiKey: apiKey2,
             analyticsURL: url,
             isFirstLaunch: isFirstLaunch,
@@ -79,7 +79,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let url = URL(string: "https://wba.wb.ru/m/batch")!
         let apiKey = "TestApiKey1"
 
-        let reciever1 = WBAnalyticsReceiver(
+        let reciever1 = WildAnalyticsReceiver(
             apiKey: apiKey,
             analyticsURL: url,
             isFirstLaunch: isFirstLaunch,
@@ -94,7 +94,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         analytics1.registerReceiver(reciever1)
 
         let apiKey2 = "TestApiKey2="
-        let reciever2 = WBAnalyticsReceiver(
+        let reciever2 = WildAnalyticsReceiver(
             apiKey: apiKey2,
             analyticsURL: url,
             isFirstLaunch: isFirstLaunch,
@@ -117,7 +117,7 @@ struct NetworkTypeProviderMock: NetworkTypeProviderProtocol {
     }
 }
 
-extension AppDelegate: WBAnalyticsDelegateProtocol {
+extension AppDelegate: WildAnalyticsDelegateProtocol {
     func didResolveAttributedLink(_ link: URL) {
         print("[Attribution] RESOLVED LINK: \(link)")
     }

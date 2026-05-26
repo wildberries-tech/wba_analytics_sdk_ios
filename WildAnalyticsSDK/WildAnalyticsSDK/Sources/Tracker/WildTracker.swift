@@ -3,11 +3,11 @@
 import Foundation
 
 /// Main tracker for Wildberries analytics
-final class WBTracker {
+final class WildTracker {
     private let logger: CompositeLogger
     private let deviceFingerprintService: DeviceFingerprintService
 
-    /// WBTracker initialization
+    /// WildTracker initialization
     /// - Parameter logger: Logger for event logging
     init(apiKey: String, logger: CompositeLogger = CompositeLogger(loggers: [])) {
         self.logger = logger
@@ -22,7 +22,7 @@ final class WBTracker {
     /// Checks device attribution via fingerprint
     /// - Parameter completion: Callback with AttributionResult or error
     public func checkAttribution(completion: ((Result<AttributionResult?, Error>) -> Void)? = nil) {
-        logger.info("WBTracker", "checkAttribution started")
+        logger.info("WildTracker", "checkAttribution started")
         deviceFingerprintService.checkAttribution { result in
             completion?(result)
         }

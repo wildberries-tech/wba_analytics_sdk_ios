@@ -14,7 +14,7 @@ The SDK is distributed via SPM, to add it to your project simply add to your pro
 
 The application assumes one analytics instance that can support multiple receivers.
 
-To create a WBAnalyticsReceiver instance, you need to pass several mandatory parameters to its initializer:
+To create a WildAnalyticsReceiver instance, you need to pass several mandatory parameters to its initializer:
     
 - **environment:** Application environment, can be .production or .test, if needed you can set your own apiKey .custom("apiKey"). ([example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL to which analytics data will be sent.
@@ -31,7 +31,7 @@ let service = WildAnalyticsSDK()
 
 let apiKey = "<PUT API KEY HERE>"
 
-let reciever1 = WBAnalyticsReceiver(
+let reciever1 = WildAnalyticsReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     loggingOptions: loggingOptions,
@@ -40,7 +40,7 @@ let reciever1 = WBAnalyticsReceiver(
 )
 reciever1.setup() // Important to setup before use
 
-let reciever2 = WBAnalyticsReceiver(
+let reciever2 = WildAnalyticsReceiver(
     apiKey: "TestKey",
     isFirstLaunch: isFirstLaunch,
     loggingOptions: LoggingOptions.default,

@@ -4,7 +4,7 @@ import Foundation
 import UIKit
 
 /// Configuration for WBAnalytics.
-public final class WBAnalyticsReceiver {
+public final class WildAnalyticsReceiver {
 
     // MARK: - Properties
     private let apiKey: String
@@ -16,7 +16,7 @@ public final class WBAnalyticsReceiver {
     private let networkTypeProvider: NetworkTypeProviderProtocol
     private let batchConfig: BatchConfig
     private var analyticsInstance: WBAnalytics?
-    private weak var delegate: WBAnalyticsDelegateProtocol?
+    private weak var delegate: WildAnalyticsDelegateProtocol?
 
     // MARK: - Initialization
     /// Configuration for WBAnalytics.
@@ -30,14 +30,14 @@ public final class WBAnalyticsReceiver {
     ///   - batchConfig: Сonfiguration of batch sending parameters.
     public init(
         apiKey: String,
-        analyticsURL: URL = WBAnalyticsReceiver.defaultAnalyticsURL,
+        analyticsURL: URL = WildAnalyticsReceiver.defaultAnalyticsURL,
         inteceptor: RequestInterceptor = NoOpInterceptor(),
         isFirstLaunch: Bool,
         enableAttributionTracking: Bool = true,
         loggingOptions: LoggingOptions,
         networkTypeProvider: NetworkTypeProviderProtocol,
         batchConfig: BatchConfig,
-        delegate: WBAnalyticsDelegateProtocol? = nil
+        delegate: WildAnalyticsDelegateProtocol? = nil
     ) {
         self.apiKey = apiKey
         self.analyticsURL = analyticsURL
@@ -52,11 +52,11 @@ public final class WBAnalyticsReceiver {
 }
 
 // MARK: - AnalyticsReceiver
-extension WBAnalyticsReceiver: AnalyticsReceiver {
+extension WildAnalyticsReceiver: AnalyticsReceiver {
 
     /// Unique identifier for receiver
     public static var identifier: String {
-        "ru.wildberries.receiver_" + String(describing: WBAnalyticsReceiver.self).lowercased()
+        "ru.wildberries.receiver_" + String(describing: WildAnalyticsReceiver.self).lowercased()
     }
 
     /// Unique identifier for receiver
@@ -119,7 +119,7 @@ extension WBAnalyticsReceiver: AnalyticsReceiver {
     }
 }
 
-extension WBAnalyticsReceiver: AnalyticsCompletionReceiver {
+extension WildAnalyticsReceiver: AnalyticsCompletionReceiver {
 
     /// Tracks an event with a completion handler to indicate success or failure.
     public func trackEventWithCompletion(name: String, parameters: [String : Any]?, completion: @escaping (Bool) -> Void) {
@@ -127,13 +127,13 @@ extension WBAnalyticsReceiver: AnalyticsCompletionReceiver {
     }
 }
 
-public extension WBAnalyticsReceiver {
+public extension WildAnalyticsReceiver {
     func showLogScreen() -> UIViewController? {
         analyticsInstance?.logViewController()
     }
 }
 
-extension WBAnalyticsReceiver {
+extension WildAnalyticsReceiver {
 
     public static var defaultAnalyticsURL: URL {
         URL(string: "https://wba.wb.ru/m/batch")!

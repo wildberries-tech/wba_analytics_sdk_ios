@@ -66,7 +66,7 @@ final class EventsProcessorImpl: EventsProcessor {
     private enum Constants {
         static let logLabel = "EventsProcessor"
         static let analyticsQueueName = "WBAnalytics"
-        static let newLaunchKey = "WBMAnalytics-isNewLaunch"
+        static let newLaunchKey = "WildAnalyticsSDK-isNewLaunch"
         static let maxBatchSizeInBytes: Int = 512 * 1024
     }
 

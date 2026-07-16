@@ -4,7 +4,7 @@ import Foundation
 import UIKit
 
 /// Public delegate of WBAnalytics
-public protocol WBAnalyticsDelegateProtocol: AnyObject {
+public protocol WildAnalyticsDelegateProtocol: AnyObject {
 
     /// Called when WB Tracker found an attributed deeplink that can be handled by the client
     /// - Parameter link: URL
@@ -48,15 +48,15 @@ public class WBAnalytics {
 
     lazy var configProvider: ConfigProvider = ConfigProvider(logger: logger)
 
-    private lazy var attributionTracker: WBTracker = {
-        WBTracker(apiKey: apiKey, logger: logger, sessionDelegate: sessionDelegate)
+    private lazy var attributionTracker: WildTracker = {
+        WildTracker(apiKey: apiKey, logger: logger, sessionDelegate: sessionDelegate)
     }()
 
     private let apiKey: String
     private let analyticsURL: URL
     private let interceptor: RequestInterceptor
     private let sessionDelegate: URLSessionDelegate?
-    private weak var delegate: WBAnalyticsDelegateProtocol?
+    private weak var delegate: WildAnalyticsDelegateProtocol?
 
     static var loggingOptions: LoggingOptions = .default
 
@@ -87,7 +87,7 @@ public class WBAnalytics {
         interceptor: RequestInterceptor,
         loggingOptions: LoggingOptions = .default,
         sessionDelegate: URLSessionDelegate? = nil,
-        delegate: WBAnalyticsDelegateProtocol? = nil
+        delegate: WildAnalyticsDelegateProtocol? = nil
     ) -> WBAnalytics {
         let analytics = WBAnalytics(
             apiKey: apiKey,

@@ -34,7 +34,7 @@ public final class WildAnalyticsReceiver {
     ///   - sessionDelegate: Custom URLSessionDelegate for handling authentication challenges (e.g. SSL pinning) of the batch sending session.
     public init(
         apiKey: String,
-        analyticsURL: URL = WBAnalyticsReceiver.defaultAnalyticsURL,
+        analyticsURL: URL = WildAnalyticsReceiver.defaultAnalyticsURL,
         inteceptor: RequestInterceptor = NoOpInterceptor(),
         isFirstLaunch: Bool,
         enableAttributionTracking: Bool = true,

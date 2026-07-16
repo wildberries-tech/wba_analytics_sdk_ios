@@ -49,12 +49,13 @@ public class WBAnalytics {
     lazy var configProvider: ConfigProvider = ConfigProvider(logger: logger)
 
     private lazy var attributionTracker: WildTracker = {
-        WildTracker(apiKey: apiKey, logger: logger)
+        WildTracker(apiKey: apiKey, logger: logger, sessionDelegate: sessionDelegate)
     }()
 
     private let apiKey: String
     private let analyticsURL: URL
     private let interceptor: RequestInterceptor
+    private let sessionDelegate: URLSessionDelegate?
     private weak var delegate: WildAnalyticsDelegateProtocol?
 
     static var loggingOptions: LoggingOptions = .default
@@ -62,11 +63,13 @@ public class WBAnalytics {
     private init(
         apiKey: String,
         analyticsURL: URL,
-        interceptor: RequestInterceptor
+        interceptor: RequestInterceptor,
+        sessionDelegate: URLSessionDelegate?
     ) {
         self.apiKey = apiKey
         self.analyticsURL = analyticsURL
         self.interceptor = interceptor
+        self.sessionDelegate = sessionDelegate
     }
 
     /// This function is used to setup the analytics with the provided parameters.
@@ -79,15 +82,18 @@ public class WBAnalytics {
         networkTypeProvider: NetworkTypeProviderProtocol,
         queue: DispatchQueue? = nil,
         batchConfig: BatchConfig,
+        idfaConfig: IDFAConfig = IDFAConfig(),
         analyticsURL: URL,
         interceptor: RequestInterceptor,
         loggingOptions: LoggingOptions = .default,
+        sessionDelegate: URLSessionDelegate? = nil,
         delegate: WildAnalyticsDelegateProtocol? = nil
     ) -> WBAnalytics {
         let analytics = WBAnalytics(
             apiKey: apiKey,
             analyticsURL: analyticsURL,
-            interceptor: interceptor
+            interceptor: interceptor,
+            sessionDelegate: sessionDelegate
         )
         Self.loggingOptions = loggingOptions
         analytics.processor.setup(
@@ -96,9 +102,11 @@ public class WBAnalytics {
             dropCache: dropCache,
             queue: queue,
             batchConfig: batchConfig,
+            idfaConfig: idfaConfig,
             networkTypeProvider: networkTypeProvider,
             enumerationCounter: UserDefaultsEnumerationCounter(),
-            userEngagementTracker: nil
+            userEngagementTracker: nil,
+            sessionDelegate: sessionDelegate
         )
 
         analytics.delegate = delegate
@@ -119,6 +127,20 @@ public class WBAnalytics {
         processor.setDeviceId(deviceId)
     }
 
+    /// Set a single custom header that will be added to all analytics requests.
+    /// - Parameters:
+    ///   - key: Header field name
+    ///   - value: Header field value
+    public func setCustomHeader(key: String, value: String) {
+        processor.setCustomHeader(key: key, value: value)
+    }
+
+    /// Set custom headers that will be added to all analytics requests.
+    /// - Parameter headers: Dictionary of header field names and values
+    public func setCustomHeaders(_ headers: [String: String]) {
+        processor.setCustomHeaders(headers)
+    }
+
     /// Sets a unique session value
     public func setSessionValue(_ value: String?) {
         processor.setSessionValue(value)
@@ -127,12 +149,6 @@ public class WBAnalytics {
     /// Set a handler called when session value updates
     func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
         processor.setOnSessionValueUpdated(handler)
-    }
-
-    /// Set IDFA
-    /// - Parameter idfa: Unique advertising identifier
-    public func setIDFA(_ idfa: @escaping () -> String) {
-        processor.setIDFA(idfa)
     }
 
     /// This function is used to set common parameters for the analytics.

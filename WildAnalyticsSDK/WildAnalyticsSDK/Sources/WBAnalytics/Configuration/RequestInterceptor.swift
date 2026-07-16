@@ -5,11 +5,11 @@
 import Foundation
 
 public protocol RequestInterceptor {
-    func intercept(request: inout URLRequest)
+    func intercept(request: inout URLRequest) async
 }
 
 public final class NoOpInterceptor: RequestInterceptor {
-    public func intercept(request: inout URLRequest) {
+    public func intercept(request: inout URLRequest) async {
 
     }
 

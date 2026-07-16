@@ -15,6 +15,8 @@ public final class WildAnalyticsReceiver {
     private let loggingOptions: LoggingOptions
     private let networkTypeProvider: NetworkTypeProviderProtocol
     private let batchConfig: BatchConfig
+    private let sessionDelegate: URLSessionDelegate?
+    private let idfaConfig: IDFAConfig
     private var analyticsInstance: WBAnalytics?
     private weak var delegate: WildAnalyticsDelegateProtocol?
 
@@ -28,6 +30,8 @@ public final class WildAnalyticsReceiver {
     ///   - loggingOptions: Structure that holds the logging configurations.
     ///   - networkTypeProvider: Object that returns the current network status.
     ///   - batchConfig: Сonfiguration of batch sending parameters.
+    ///   - idfaConfig: Configuration of the advertising identifier (IDFA) collection.
+    ///   - sessionDelegate: Custom URLSessionDelegate for handling authentication challenges (e.g. SSL pinning) of the batch sending session.
     public init(
         apiKey: String,
         analyticsURL: URL = WildAnalyticsReceiver.defaultAnalyticsURL,
@@ -37,6 +41,8 @@ public final class WildAnalyticsReceiver {
         loggingOptions: LoggingOptions,
         networkTypeProvider: NetworkTypeProviderProtocol,
         batchConfig: BatchConfig,
+        idfaConfig: IDFAConfig = IDFAConfig(),
+        sessionDelegate: URLSessionDelegate? = nil,
         delegate: WildAnalyticsDelegateProtocol? = nil
     ) {
         self.apiKey = apiKey
@@ -47,6 +53,8 @@ public final class WildAnalyticsReceiver {
         self.loggingOptions = loggingOptions
         self.networkTypeProvider = networkTypeProvider
         self.batchConfig = batchConfig
+        self.idfaConfig = idfaConfig
+        self.sessionDelegate = sessionDelegate
         self.delegate = delegate
     }
 }
@@ -56,7 +64,7 @@ extension WildAnalyticsReceiver: AnalyticsReceiver {
 
     /// Unique identifier for receiver
     public static var identifier: String {
-        "ru.wildberries.receiver_" + String(describing: WildAnalyticsReceiver.self).lowercased()
+        "ru.wildanalytics.receiver_" + String(describing: WildAnalyticsReceiver.self).lowercased()
     }
 
     /// Unique identifier for receiver
@@ -74,15 +82,27 @@ extension WildAnalyticsReceiver: AnalyticsReceiver {
             dropCache: false,
             networkTypeProvider: networkTypeProvider,
             batchConfig: batchConfig,
+            idfaConfig: idfaConfig,
             analyticsURL: analyticsURL,
             interceptor: interceptor,
             loggingOptions: loggingOptions,
+            sessionDelegate: sessionDelegate,
             delegate: delegate
         )
     }
 
     public func setUserToken(_ token: String?) {
         analyticsInstance?.setUserToken(token)
+    }
+
+    /// Set a single custom header that will be added to all analytics requests.
+    public func setCustomHeader(key: String, value: String) {
+        analyticsInstance?.setCustomHeader(key: key, value: value)
+    }
+
+    /// Set custom headers that will be added to all analytics requests.
+    public func setCustomHeaders(_ headers: [String: String]) {
+        analyticsInstance?.setCustomHeaders(headers)
     }
 
     public func setDeviceId(_ deviceId: String?) {
@@ -97,10 +117,6 @@ extension WildAnalyticsReceiver: AnalyticsReceiver {
     /// Set a handler called when session value updates
     public func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
         analyticsInstance?.setOnSessionValueUpdated(handler)
-    }
-
-    public func setIDFA(_ idfa: @escaping () -> String) {
-        analyticsInstance?.setIDFA(idfa)
     }
 
     /// Sets common parameters for the analytics.

@@ -7,7 +7,7 @@ SDK для логирования событий в IOS-приложении. С
 SDK поставляется через SPM, для добавления в свой проект достаточно добавить в свой проект 
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.0.0")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.0.1")
 ```
 
 ## 🚀 Launch in app
@@ -54,6 +54,37 @@ service.registerReceiver(reciever2)
 
 return service
 ```
+
+## 📱 IDFA (device_ad_id)
+
+SDK самостоятельно читает рекламный идентификатор (IDFA) напрямую из ОС через фреймворк `AdSupport` и добавляет его в объект `meta` каждого батча под ключом `device_ad_id`.
+
+- Перед чтением SDK проверяет статус **App Tracking Transparency**. SDK **не показывает** промт запроса разрешения — это зона ответственности приложения. `ATTrackingManager` используется только для получения статуса ответа пользователя.
+- Если разрешение не получено (пользователь отказал **или ещё не ответил**), либо IDFA по какой-то причине недоступен, в `device_ad_id` отправляется **пустая строка**.
+
+Поведение настраивается через `IDFAConfig`:
+
+```swift
+let reciever = WildAnalyticsReceiver(
+    apiKey: apiKey,
+    isFirstLaunch: isFirstLaunch,
+    loggingOptions: loggingOptions,
+    networkTypeProvider: networkTypeProvider,
+    batchConfig: BatchConfig(),
+    idfaConfig: IDFAConfig(
+        isDisabled: false,        // true — полностью отключить сбор IDFA (всегда пустая строка)
+        firstLaunchIDFADelay: 60  // на первом запуске отложить НАЧАЛО чтения IDFA на N секунд,
+                                  // чтобы дать приложению запросить ATT, а пользователю — ответить.
+                                  // События при этом отправляются как обычно — до истечения
+                                  // задержки в device_ad_id уходит пустая строка. 0 — читать сразу.
+    )
+)
+```
+
+`AdSupport` и `AppTrackingTransparency` подключаются как weak-фреймворки. Приложение, которому сбор IDFA не нужен, может выставить `IDFAConfig(isDisabled: true)`.
+
+> Не забудьте про требования App Store: при использовании IDFA приложение должно объявить причину доступа в `PrivacyInfo.xcprivacy` и, если показывает ATT-промт, добавить `NSUserTrackingUsageDescription` в `Info.plist`.
+
 
 ## 🧑‍💻 Log events
 

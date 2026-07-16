@@ -9,15 +9,16 @@ protocol BatchProcessor {
         queue: Dispatcher?,
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
-        batchWorker: BatchWorker
+        batchWorker: BatchWorker,
+        idfaProvider: IDFAProvider
     )
     func launch()
     func update(isNewLaunch: Bool)
     func addBatch(withEvents events: [Event])
     func sendEventSync(event: Event, completion: @escaping (_ successfully: Bool) -> Void)
     func setUserToken(_ token: String?)
+    func setCustomHeaders(_ headers: [String: String])
     func setDeviceId(_ deviceId: String?)
-    func setIDFA(_ idfa: @escaping () -> String)
 }
 
 final class BatchProcessorImpl: BatchProcessor {
@@ -34,7 +35,7 @@ final class BatchProcessorImpl: BatchProcessor {
     private var batchWorker: BatchWorker?
     private var storage: Storage
     private var deviceId: String?
-    private var idfa: (() -> String)?
+    private var idfaProvider: IDFAProvider = SystemIDFAProvider(isDisabled: false)
     // default value
     private var batches: [BatchModel] = []
     private var isNewLaunch = false
@@ -42,6 +43,7 @@ final class BatchProcessorImpl: BatchProcessor {
 
     private var batchesFromStorage: [BatchModel] = []
     private var userDefaultsStorage: UserDefaultsStorage?
+    private var sendTask: Task<Void, Never>?
 
     private enum Constants {
         static let bytesInKb: Int = 1024
@@ -68,13 +70,15 @@ final class BatchProcessorImpl: BatchProcessor {
         queue: Dispatcher?,
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
-        batchWorker: BatchWorker
+        batchWorker: BatchWorker,
+        idfaProvider: IDFAProvider = SystemIDFAProvider(isDisabled: false)
     ) {
         self.batchSender = batchSender
         self.queue = queue
         self.networkTypeProvider = networkTypeProvider
         self.counter = counter
         self.batchWorker = batchWorker
+        self.idfaProvider = idfaProvider
         self.batchesFromStorage = userDefaultsStorage?.loadBatches() ?? []
         DeviceMemoryState.setState(.normal)
         batches = []
@@ -109,12 +113,12 @@ final class BatchProcessorImpl: BatchProcessor {
         batchSender?.setUserToken(token)
     }
 
-    func setDeviceId(_ deviceId: String?) {
-        self.deviceId = deviceId
+    func setCustomHeaders(_ headers: [String: String]) {
+        batchSender?.setCustomHeaders(headers)
     }
 
-    func setIDFA(_ idfa: @escaping () -> String) {
-        self.idfa = idfa
+    func setDeviceId(_ deviceId: String?) {
+        self.deviceId = deviceId
     }
 
     func sendEventSync(event: Event, completion: @escaping (_ successfully: Bool) -> Void) {
@@ -212,7 +216,16 @@ final class BatchProcessorImpl: BatchProcessor {
             return
         }
 
-        batchSender.sendBatch(batchData, completion: completionBlock)
+        sendTask = Task { [weak self] in
+            let successfully = await batchSender.sendBatch(batchData)
+            // Hop back onto the analytics queue so batch-sending state is mutated serially,
+            // matching the threading the URLSession delegate queue used to provide.
+            if let queue = self?.queue {
+                queue.async { completionBlock(successfully) }
+            } else {
+                completionBlock(successfully)
+            }
+        }
     }
 
     private func didSendBatch(_ model: BatchModel, successfully: Bool) {
@@ -268,7 +281,7 @@ final class BatchProcessorImpl: BatchProcessor {
         return Meta(
             networkType: networkType,
             deviceId: deviceId ?? WBAnalytics.deviceId,
-            idfa: idfa.idfaOrEmpty,
+            idfa: idfaProvider.currentIDFA(),
             isNewUser: isNewLaunch
         )
     }

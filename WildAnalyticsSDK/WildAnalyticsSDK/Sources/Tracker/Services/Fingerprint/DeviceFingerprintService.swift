@@ -9,9 +9,10 @@ import AdSupport
 final class DeviceFingerprintService {
     private let collector: DeviceFingerprintCollector
     private let logger: CompositeLogger
-    private let attributionQueue = DispatchQueue(label: "ru.wildberries.deviceFingerprint.attribution")
+    private let attributionQueue = DispatchQueue(label: "ru.wildanalytics.deviceFingerprint.attribution")
     private let storage: AttributionStorageProtocol
     private let apiKey: String
+    private let session: URLSession
 
     /// Private configuration parameters
     private enum Configuration {
@@ -24,16 +25,24 @@ final class DeviceFingerprintService {
     ///   - collector: Fingerprint collector (default is standard)
     ///   - logger: Logger (default is empty)
     ///   - storage: Attribution storage (default is UserDefaults)
+    ///   - sessionDelegate: Custom URLSessionDelegate for handling authentication challenges (e.g. SSL pinning).
+    ///   When provided, requests run on a dedicated session bound to this delegate; otherwise `URLSession.shared` is used.
     init(
         apiKey: String,
         collector: DeviceFingerprintCollector = DeviceFingerprintCollector(),
         logger: CompositeLogger = CompositeLogger(loggers: []),
-        storage: AttributionStorageProtocol = UserDefaultsAttributionStorage()
+        storage: AttributionStorageProtocol = UserDefaultsAttributionStorage(),
+        sessionDelegate: URLSessionDelegate? = nil
     ) {
         self.apiKey = apiKey
         self.collector = collector
         self.logger = logger
         self.storage = storage
+        if let sessionDelegate {
+            self.session = URLSession(configuration: .default, delegate: sessionDelegate, delegateQueue: nil)
+        } else {
+            self.session = .shared
+        }
     }
 
     /// Checks device attribution via fingerprint
@@ -100,7 +109,7 @@ final class DeviceFingerprintService {
         }
 
         self.logger.debug("DeviceFingerprintService", "request: \(request.cURL(pretty: true))")
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        let task = session.dataTask(with: request) { data, response, error in
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 404 {
                 self.logger.debug("DeviceFingerprintService", "Fingerprint not found")
                 completion(.success(AttributionData.empty))

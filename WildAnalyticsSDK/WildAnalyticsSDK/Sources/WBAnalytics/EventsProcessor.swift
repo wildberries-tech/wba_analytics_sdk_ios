@@ -13,15 +13,18 @@ protocol EventsProcessor {
     ///   - networkTypeProvider: Object that returns the current network status.
     ///   - enumerationCounter: Counts sent events and batches.
     ///   - userEngagementTracker: Tracker for shown screens.
+    ///   - sessionDelegate: Custom URLSessionDelegate for handling authentication challenges of the batch sending session.
     func setup(
         apiKey: String,
         isFirstLaunch: Bool,
         dropCache: Bool,
         queue: DispatchQueue?,
         batchConfig: BatchConfig,
+        idfaConfig: IDFAConfig,
         networkTypeProvider: NetworkTypeProviderProtocol,
         enumerationCounter: EnumerationCounter,
-        userEngagementTracker:  UserEngagementTrackerProtocol?
+        userEngagementTracker:  UserEngagementTrackerProtocol?,
+        sessionDelegate: URLSessionDelegate?
     )
     /// Sets common parameters for the analytics that will be added to all events
     func setCommonParameters(_ parameters: [String: Any])
@@ -42,14 +45,20 @@ protocol EventsProcessor {
     /// Set authenticated user token
     /// - Parameter token: Token
     func setUserToken(_ token: String?)
+    /// Set a single custom header that will be added to all batch requests
+    /// - Parameters:
+    ///   - key: Header field name
+    ///   - value: Header field value
+    func setCustomHeader(key: String, value: String)
+    /// Set custom headers that will be added to all batch requests
+    /// - Parameter headers: Dictionary of header field names and values
+    func setCustomHeaders(_ headers: [String: String])
     /// Set device id
     func setDeviceId(_ deviceId: String?)
     /// Set a unique session value
     func setSessionValue(_ value: String?)
     /// Set a handler called when session value updates
     func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void)
-    /// Set IDFA
-    func setIDFA(_ idfa: @escaping () -> String)
 }
 
 final class EventsProcessorImpl: EventsProcessor {
@@ -77,6 +86,12 @@ final class EventsProcessorImpl: EventsProcessor {
 
     private var events = [Event]()
     private var commonParameters = [String: Any]()
+
+    private let customHeadersQueue = DispatchQueue(
+        label: "\(Constants.analyticsQueueName).customHeaders",
+        attributes: .concurrent
+    )
+    private var _customHeaders = [String: String]()
 
     init(
         batchProcessor: BatchProcessor,
@@ -109,9 +124,11 @@ final class EventsProcessorImpl: EventsProcessor {
         dropCache: Bool,
         queue: DispatchQueue? = nil,
         batchConfig: BatchConfig,
+        idfaConfig: IDFAConfig = IDFAConfig(),
         networkTypeProvider: NetworkTypeProviderProtocol,
         enumerationCounter: EnumerationCounter = UserDefaultsEnumerationCounter(),
-        userEngagementTracker:  UserEngagementTrackerProtocol? = nil
+        userEngagementTracker:  UserEngagementTrackerProtocol? = nil,
+        sessionDelegate: URLSessionDelegate? = nil
     ) {
         logger.debug(Constants.logLabel, "---------------------")
 
@@ -127,7 +144,8 @@ final class EventsProcessorImpl: EventsProcessor {
             queue: self.queue,
             batchConfig: batchConfig,
             logger: logger,
-            interceptor: interceptor
+            interceptor: interceptor,
+            sessionDelegate: sessionDelegate
         )
         subscribeForNotifications()
 
@@ -138,6 +156,14 @@ final class EventsProcessorImpl: EventsProcessor {
 
         async { [weak self] in
             guard let self else { return }
+            // On the first launch, postpone reading the IDFA for the configured interval so the app
+            // can request ATT authorization and the user can answer. Events still flow during this
+            // window — they just carry an empty device_ad_id until the IDFA reader is activated.
+            let idfaDelay = isFirstLaunch ? idfaConfig.firstLaunchIDFADelay : 0
+            let idfaProvider = DelayedIDFAProvider(
+                wrapped: SystemIDFAProvider(isDisabled: idfaConfig.isDisabled),
+                isActive: idfaDelay <= 0
+            )
             self.batchProcessor.setup(
                 batchSender: batchSender,
                 queue: self.queue,
@@ -146,8 +172,13 @@ final class EventsProcessorImpl: EventsProcessor {
                 batchWorker: BatchWorkerImpl(
                     queue: self.queue,
                     batchConfig: batchConfig
-                )
+                ),
+                idfaProvider: idfaProvider
             )
+            let storedHeaders = self.customHeadersQueue.sync { self._customHeaders }
+            if !storedHeaders.isEmpty {
+                self.batchProcessor.setCustomHeaders(storedHeaders)
+            }
             self.batchProcessor.launch()
             self.checkOnNewLaunch()
             if isFirstLaunch {
@@ -156,6 +187,11 @@ final class EventsProcessorImpl: EventsProcessor {
 
             self.userEngagementTracker.start()
             self.startSendEventsTimer()
+            if idfaDelay > 0 {
+                self.queue.asyncAfter(deadline: .now() + idfaDelay) { [weak idfaProvider] in
+                    idfaProvider?.activate()
+                }
+            }
             self.appStartTracker.setup { [weak self] input in
                 self?.processEventSync(
                     input.name,
@@ -183,6 +219,24 @@ final class EventsProcessorImpl: EventsProcessor {
         batchProcessor.setUserToken(token)
     }
 
+    func setCustomHeader(key: String, value: String) {
+        let headers: [String: String] = customHeadersQueue.sync(flags: .barrier) {
+            _customHeaders[key] = value
+            return _customHeaders
+        }
+        logger.info(Constants.logLabel, "setCustomHeader: \(key)")
+        batchProcessor.setCustomHeaders(headers)
+    }
+
+    func setCustomHeaders(_ headers: [String: String]) {
+        let merged: [String: String] = customHeadersQueue.sync(flags: .barrier) {
+            _customHeaders.merge(headers) { _, new in new }
+            return _customHeaders
+        }
+        logger.info(Constants.logLabel, "setCustomHeaders: \(headers.keys)")
+        batchProcessor.setCustomHeaders(merged)
+    }
+
     func setDeviceId(_ deviceId: String?) {
         batchProcessor.setDeviceId(deviceId)
     }
@@ -193,10 +247,6 @@ final class EventsProcessorImpl: EventsProcessor {
 
     func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
         sessionValueManager.setOnSessionValueUpdated(handler)
-    }
-
-    func setIDFA(_ idfa: @escaping () -> String) {
-        batchProcessor.setIDFA(idfa)
     }
 
     func addEvent(_ event: String, parameters: [String: Any]? = nil) {

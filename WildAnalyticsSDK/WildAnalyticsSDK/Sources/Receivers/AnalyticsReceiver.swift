@@ -36,6 +36,16 @@ public protocol AnalyticsReceiver {
     /// - Parameter token: Token
     func setUserToken(_ token: String?)
 
+    /// Set a single custom header that will be added to all analytics requests
+    /// - Parameters:
+    ///   - key: Header field name
+    ///   - value: Header field value
+    func setCustomHeader(key: String, value: String)
+
+    /// Set custom headers that will be added to all analytics requests
+    /// - Parameter headers: Dictionary of header field names and values
+    func setCustomHeaders(_ headers: [String: String])
+
     /// Sets a unique session value
     /// - Parameter value: Unique session value
     func setSessionValue(_ value: String?)
@@ -43,10 +53,6 @@ public protocol AnalyticsReceiver {
     /// Set a handler called when session value updates
     /// - Parameter handler: Handler called when session value updates
     func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void)
-
-    /// Set IDFA
-    /// - Parameter idfa: Unique advertising identifier
-    func setIDFA(_ idfa: @escaping () -> String)
 
     /// Returns a view controller to display debug logs for this receiver.
     func showLogScreen() -> UIViewController?
@@ -58,6 +64,10 @@ public extension AnalyticsReceiver {
     func setup() {}
     /// Sets common parameters for the analytics.
     func setCommonParameters(_ parameters: [String: Any]) {}
+    /// Set a single custom header that will be added to all analytics requests.
+    func setCustomHeader(key: String, value: String) {}
+    /// Set custom headers that will be added to all analytics requests.
+    func setCustomHeaders(_ headers: [String: String]) {}
     /// Logs an event with the provided parameters.
     func trackEvent(name: String, parameters: [String: Any]?) {}
     /// Logging generic for sending an event with the provided parameters.

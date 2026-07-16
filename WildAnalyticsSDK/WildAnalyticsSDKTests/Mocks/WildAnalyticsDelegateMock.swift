@@ -5,7 +5,7 @@
 import Foundation
 @testable import WildAnalyticsSDK
 
-final class WBAnalyticsDelegateMock: WildAnalyticsDelegateProtocol {
+final class WildAnalyticsDelegateMock: WildAnalyticsDelegateProtocol {
 
     private(set) var didResolveAttributedLinkWasCalled: Int = 0
     private(set) var didResolveAttributedLinkReceivedURL: URL?

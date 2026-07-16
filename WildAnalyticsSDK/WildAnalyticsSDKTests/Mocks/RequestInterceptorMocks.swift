@@ -15,7 +15,7 @@ final class RequestInterceptorMock: RequestInterceptor {
 
     var interceptHandler: ((inout URLRequest) -> Void)?
 
-    func intercept(request: inout URLRequest) {
+    func intercept(request: inout URLRequest) async {
         interceptCallCount += 1
 
         interceptedRequests.append(request)

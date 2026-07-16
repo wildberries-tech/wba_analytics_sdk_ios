@@ -68,4 +68,26 @@ final class URLSessionMock: URLSessionProtocol {
         dataTaskWithURLReceivedURL = url
         return dataTaskWithURLStub
     }
+
+    // MARK: - data(for:)
+
+    public private(set) var dataForRequestWasCalled: Int = 0
+    public private(set) var dataForRequestReceivedRequest: URLRequest?
+    public var dataForRequestDataStub: Data = Data()
+    public var dataForRequestResponseStub: URLResponse = HTTPURLResponse(
+        url: URL(string: "https://a.wb.ru/m/batch")!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: nil
+    )!
+    public var dataForRequestErrorStub: Error?
+
+    public func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        dataForRequestWasCalled += 1
+        dataForRequestReceivedRequest = request
+        if let dataForRequestErrorStub {
+            throw dataForRequestErrorStub
+        }
+        return (dataForRequestDataStub, dataForRequestResponseStub)
+    }
 }

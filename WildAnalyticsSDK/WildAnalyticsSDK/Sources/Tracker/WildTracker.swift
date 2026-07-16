@@ -7,15 +7,23 @@ final class WildTracker {
     private let logger: CompositeLogger
     private let deviceFingerprintService: DeviceFingerprintService
 
-    /// WildTracker initialization
-    /// - Parameter logger: Logger for event logging
-    init(apiKey: String, logger: CompositeLogger = CompositeLogger(loggers: [])) {
+    /// WBTracker initialization
+    /// - Parameters:
+    ///   - apiKey: API Key
+    ///   - logger: Logger for event logging
+    ///   - sessionDelegate: Custom URLSessionDelegate for handling authentication challenges (e.g. SSL pinning).
+    init(
+        apiKey: String,
+        logger: CompositeLogger = CompositeLogger(loggers: []),
+        sessionDelegate: URLSessionDelegate? = nil
+    ) {
         self.logger = logger
         let collector = DeviceFingerprintCollector()
         self.deviceFingerprintService = DeviceFingerprintService(
             apiKey: apiKey,
             collector: collector,
-            logger: logger
+            logger: logger,
+            sessionDelegate: sessionDelegate
         )
     }
 

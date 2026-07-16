@@ -4,7 +4,8 @@ import Foundation
 
 protocol BatchSender: NSObject {
     func setUserToken(_ token: String?)
-    func sendBatch(_ requestData: Data, completion: @escaping (_ successfully: Bool) -> Void)
+    func setCustomHeaders(_ headers: [String: String])
+    func sendBatch(_ requestData: Data) async -> Bool
 }
 
 final class BatchSenderImpl: NSObject, BatchSender {
@@ -20,8 +21,10 @@ final class BatchSenderImpl: NSObject, BatchSender {
     private let batchConfig: BatchConfig
     private let logger: Logger
     private let interceptor: RequestInterceptor
+    private let sessionDelegate: URLSessionDelegate?
     private var session: URLSessionProtocol?
     private var userToken: String?
+    private var customHeaders: [String: String] = [:]
 
     init(
         apiKey: String,
@@ -30,6 +33,7 @@ final class BatchSenderImpl: NSObject, BatchSender {
         batchConfig: BatchConfig,
         logger: Logger,
         interceptor: RequestInterceptor,
+        sessionDelegate: URLSessionDelegate? = nil,
         session: URLSessionProtocol? = nil
     ) {
         self.queue = queue
@@ -38,6 +42,7 @@ final class BatchSenderImpl: NSObject, BatchSender {
         self.batchConfig = batchConfig
         self.logger = logger
         self.interceptor = interceptor
+        self.sessionDelegate = sessionDelegate
         self.session = session
 
         super.init()
@@ -47,13 +52,15 @@ final class BatchSenderImpl: NSObject, BatchSender {
         }
     }
 
-    private var completionForExecutingTaskIdentifier: [Int: (_ successfully: Bool) -> Void] = [:]
-
     func setUserToken(_ token: String?) {
         self.userToken = token
     }
 
-    func sendBatch(_ requestData: Data, completion: @escaping (_ successfully: Bool) -> Void) {
+    func setCustomHeaders(_ headers: [String: String]) {
+        self.customHeaders = headers
+    }
+
+    func sendBatch(_ requestData: Data) async -> Bool {
         var request = URLRequest(url: analyticsURL)
         request.httpMethod = "POST"
         request.addValue(Constants.contentType, forHTTPHeaderField: "Content-Type")
@@ -61,20 +68,36 @@ final class BatchSenderImpl: NSObject, BatchSender {
         if let userToken {
             request.addValue(userToken, forHTTPHeaderField: "X-User-Token")
         }
+        for (key, value) in customHeaders {
+            request.addValue(value, forHTTPHeaderField: key)
+        }
         request.httpBody = requestData
-        interceptor.intercept(request: &request)
+        await interceptor.intercept(request: &request)
 
-        guard let task = session?.dataTask(with: request) else { return }
-        completionForExecutingTaskIdentifier[task.taskIdentifier] = completion
-        task.resume()
+        guard let session else { return false }
 
-        guard WBAnalytics.loggingOptions.logRequests else { return }
-        logger.debug(Constants.logLabel, "send request with id: \(task.taskIdentifier) cURL:\n\(request.cURL())")
-    }
+        if WBAnalytics.loggingOptions.logRequests {
+            logger.debug(Constants.logLabel, "send request cURL:\n\(request.cURL())")
+        }
 
-    private func completeTask(withIdentifier taskIdentifier: Int, successfully: Bool) {
-        completionForExecutingTaskIdentifier[taskIdentifier]?(successfully)
-        completionForExecutingTaskIdentifier[taskIdentifier] = nil
+        do {
+            let (_, response) = try await session.data(for: request)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let successfully = (200..<400).contains(statusCode)
+            if WBAnalytics.loggingOptions.logRequests {
+                if successfully {
+                    logger.info(Constants.logLabel, "request finished successfully")
+                } else {
+                    logger.error(Constants.logLabel, "request failed with status code: \(statusCode)")
+                }
+            }
+            return successfully
+        } catch {
+            if WBAnalytics.loggingOptions.logRequests {
+                logger.error(Constants.logLabel, "failed request error: \(error)")
+            }
+            return false
+        }
     }
 
     private func configureSession() -> URLSession {
@@ -94,21 +117,38 @@ final class BatchSenderImpl: NSObject, BatchSender {
 
 extension BatchSenderImpl: URLSessionTaskDelegate {
 
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        let requestFinishedSuccessfully = error == nil
-        if WBAnalytics.loggingOptions.logRequests {
-            if let error {
-                logger.error(
-                    Constants.logLabel,
-                    "failed request with id: \(task.taskIdentifier) error: \(error)"
-                )
-            } else {
-                logger.info(
-                    Constants.logLabel,
-                    "request with id: \(task.taskIdentifier) finished successfully"
-                )
-            }
+    /// Forwards session-level authentication challenges (e.g. SSL pinning) to the host-provided delegate.
+    /// Falls back to default handling when the host does not handle the challenge.
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard
+            let sessionDelegate,
+            sessionDelegate.responds(to: #selector(URLSessionDelegate.urlSession(_:didReceive:completionHandler:)))
+        else {
+            completionHandler(.performDefaultHandling, nil)
+            return
         }
-        completeTask(withIdentifier: task.taskIdentifier, successfully: requestFinishedSuccessfully)
+        sessionDelegate.urlSession?(session, didReceive: challenge, completionHandler: completionHandler)
+    }
+
+    /// Forwards task-level authentication challenges to the host-provided delegate.
+    /// Falls back to default handling when the host does not handle the challenge.
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard
+            let taskDelegate = sessionDelegate as? URLSessionTaskDelegate,
+            taskDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didReceive:completionHandler:)))
+        else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        taskDelegate.urlSession?(session, task: task, didReceive: challenge, completionHandler: completionHandler)
     }
 }

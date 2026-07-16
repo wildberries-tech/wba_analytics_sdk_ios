@@ -35,7 +35,7 @@ final class WildAnalyticsReceiverTests: XCTestCase {
 
 private extension WildAnalyticsReceiverTests {
     enum TestData {
-        static let identifier = "ru.wildberries.receiver_wildanalyticsreceiver"
+        static let identifier = "ru.wildanalytics.receiver_wbanalyticsreceiver"
         static let url = URL(string: "example.com")!
     }
 }

@@ -109,15 +109,21 @@ public final class WildAnalyticsSDK {
         }
     }
 
-    public func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+    public func setCustomHeader(key: String, value: String) {
         receivers.values.forEach {
-            $0.setOnSessionValueUpdated(handler)
+            $0.setCustomHeader(key: key, value: value)
         }
     }
 
-    public func setIDFA(_ idfa: @escaping () -> String) {
+    public func setCustomHeaders(_ headers: [String: String]) {
         receivers.values.forEach {
-            $0.setIDFA(idfa)
+            $0.setCustomHeaders(headers)
+        }
+    }
+
+    public func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+        receivers.values.forEach {
+            $0.setOnSessionValueUpdated(handler)
         }
     }
 

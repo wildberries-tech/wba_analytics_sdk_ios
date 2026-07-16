@@ -340,6 +340,7 @@ final class EventsProcessorImplTests: XCTestCase {
         )
         sleep(milliseconds: 100)
         // then
+        // The IDFA read delay must not hold back event sending: the timer starts immediately.
         XCTAssertEqual(timerMakerMock.timerWasCalled, 1)
         XCTAssertEqual(timerMakerMock.timerReceivedArguments?.timeInterval, batchConfig.sendingTimerTimeout)
         XCTAssertEqual(timerMakerMock.timerReceivedArguments?.repeats, true)
@@ -745,16 +746,77 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual(sessionValueManagerMock.setOnSessionValueUpdatedWasCalled, 1)
     }
 
-    // MARK: setIDFA
+    // MARK: setCustomHeader
 
-    func setIDFA() {
-        // given
-        let idfaClosure: () -> String = { TestData.idfa }
+    func testSetCustomHeader() {
         // when
-        processor.setIDFA(idfaClosure)
+        processor.setCustomHeader(key: TestData.customHeaderKey, value: TestData.customHeaderValue)
         // then
-        XCTAssertEqual(batchProcessorMock.setIDFAWasCalled, 1)
-        XCTAssertEqual(batchProcessorMock.setIDFAReceivedValue?(), TestData.idfa)
+        XCTAssertEqual(batchProcessorMock.setCustomHeadersWasCalled, 1)
+        XCTAssertEqual(
+            batchProcessorMock.setCustomHeadersReceivedValue,
+            [TestData.customHeaderKey: TestData.customHeaderValue]
+        )
+    }
+
+    func testSetCustomHeaders() {
+        // when
+        processor.setCustomHeaders(TestData.customHeaders)
+        // then
+        XCTAssertEqual(batchProcessorMock.setCustomHeadersWasCalled, 1)
+        XCTAssertEqual(batchProcessorMock.setCustomHeadersReceivedValue, TestData.customHeaders)
+    }
+
+    func testSetCustomHeaderMergesWithExistingHeaders() {
+        // when
+        processor.setCustomHeader(key: TestData.customHeaderKey, value: TestData.customHeaderValue)
+        processor.setCustomHeaders(TestData.customHeaders)
+        // then the second call is merged with the first, not replacing it
+        XCTAssertEqual(batchProcessorMock.setCustomHeadersWasCalled, 2)
+        var expected = TestData.customHeaders
+        expected[TestData.customHeaderKey] = TestData.customHeaderValue
+        XCTAssertEqual(batchProcessorMock.setCustomHeadersReceivedValue, expected)
+    }
+
+    func testSetCustomHeaderOverridesExistingKey() {
+        // when
+        processor.setCustomHeader(key: TestData.customHeaderKey, value: TestData.customHeaderValue)
+        processor.setCustomHeader(key: TestData.customHeaderKey, value: "newValue")
+        // then
+        XCTAssertEqual(
+            batchProcessorMock.setCustomHeadersReceivedValue,
+            [TestData.customHeaderKey: "newValue"]
+        )
+    }
+
+    func testCustomHeadersAppliedToBatchSenderOnSetup() {
+        // given headers set before setup creates the batch sender
+        processor.setCustomHeader(key: TestData.customHeaderKey, value: TestData.customHeaderValue)
+        batchProcessorMock = .init()
+        let processor = EventsProcessorImpl(
+            batchProcessor: batchProcessorMock,
+            logger: loggerMock,
+            analyticsURL: TestData.url,
+            interceptor: requestInterceptorMock,
+            notificationCenter: notificationCenterMock,
+            timerMaker: timerMakerMock,
+            sessionValueManager: sessionValueManagerMock,
+            appStartTracker: appStartTrackerMock
+        )
+        processor.setCustomHeaders(TestData.customHeaders)
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 100)
+        // then the stored headers are re-applied to the freshly created batch sender
+        XCTAssertEqual(batchProcessorMock.setCustomHeadersReceivedValue, TestData.customHeaders)
     }
 }
 
@@ -780,6 +842,9 @@ private extension EventsProcessorImplTests {
         static let appStartEventName = "application_start"
         static let appStartEventParameters: [String: Double] = ["ram": 64, "cpu": 4.61]
         static let idfa = "01234567-1234-1234-1234-123456789012"
+        static let customHeaderKey = "X-Custom-Header"
+        static let customHeaderValue = "customValue"
+        static let customHeaders = ["X-Header-One": "one", "X-Header-Two": "two"]
     }
 }
 

@@ -98,14 +98,6 @@ final class AnalyticsReceiverMock: AnalyticsReceiver {
         setOnSessionValueUpdatedWasCalled += 1
     }
 
-    private(set) var setIDFAWasCalled: Int = 0
-    private(set) var setIDFAReceivedValue: (() -> String)?
-
-    func setIDFA(_ idfa: @escaping () -> String) {
-        setIDFAWasCalled += 1
-        setIDFAReceivedValue = idfa
-    }
-
     private(set) var checkAttributionCompletionReceivedValue: ((Result<AttributionResult?, any Error>) -> Void)?
     private(set) var checkAttributionWasCalled: Int = 0
 

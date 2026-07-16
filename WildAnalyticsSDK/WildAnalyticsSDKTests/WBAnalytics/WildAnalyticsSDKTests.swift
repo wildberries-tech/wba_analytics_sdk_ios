@@ -181,26 +181,11 @@ final class WildAnalyticsSDKTests: XCTestCase {
         XCTAssertEqual(receiver.setOnSessionValueUpdatedWasCalled, 1)
     }
 
-    // MARK: setIDFA
-
-    func testSetIDFA() {
-        let receiver = AnalyticsReceiverMock()
-        receiver.identifierStub = TestData.receiverIdentifier
-        let analytics = WildAnalyticsSDK()
-        analytics.registerReceiver(receiver)
-        let idfaClosure: () -> String = { TestData.idfa }
-        // when
-        analytics.setIDFA(idfaClosure)
-        // then
-        XCTAssertEqual(receiver.setIDFAWasCalled, 1)
-        XCTAssertNotNil(receiver.setIDFAReceivedValue?(), TestData.idfa)
-    }
-
     // MARK: WildAnalyticsDelegateProtocol Tests
 
     func testWBAnalyticsSetupWithDelegate() {
         // given
-        let delegateMock = WBAnalyticsDelegateMock()
+        let delegateMock = WildAnalyticsDelegateMock()
         let networkProvider = NetworkTypeProviderMock()
         let batchConfig = BatchConfig()
 
@@ -221,7 +206,7 @@ final class WildAnalyticsSDKTests: XCTestCase {
 
         // then
         XCTAssertNotNil(mirror.delegate)
-        XCTAssertIdentical(mirror.delegate as? WBAnalyticsDelegateMock, delegateMock)
+        XCTAssertIdentical(mirror.delegate as? WildAnalyticsDelegateMock, delegateMock)
     }
 
     func testWBAnalyticsSetupWithoutDelegate() {
@@ -250,7 +235,7 @@ final class WildAnalyticsSDKTests: XCTestCase {
 
     func testDelegateWeakReference() {
         // given
-        var delegateMock: WBAnalyticsDelegateMock? = WBAnalyticsDelegateMock()
+        var delegateMock: WildAnalyticsDelegateMock? = WildAnalyticsDelegateMock()
         let networkProvider = NetworkTypeProviderMock()
         let batchConfig = BatchConfig()
 
@@ -278,7 +263,7 @@ final class WildAnalyticsSDKTests: XCTestCase {
 
     func testDidResolveAttributedLinkCalled() {
         // given
-        let delegateMock = WBAnalyticsDelegateMock()
+        let delegateMock = WildAnalyticsDelegateMock()
         let networkProvider = NetworkTypeProviderMock()
         let batchConfig = BatchConfig()
 

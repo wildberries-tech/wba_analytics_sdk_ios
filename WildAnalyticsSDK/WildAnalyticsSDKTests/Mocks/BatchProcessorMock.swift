@@ -25,7 +25,8 @@ final class BatchProcessorMock: BatchProcessor {
         queue: Dispatcher?,
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
-        batchWorker: BatchWorker
+        batchWorker: BatchWorker,
+        idfaProvider: IDFAProvider
     )?
     private(set) var setupWasCalled: Int = 0
 
@@ -34,14 +35,16 @@ final class BatchProcessorMock: BatchProcessor {
         queue: Dispatcher?,
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
-        batchWorker: BatchWorker
+        batchWorker: BatchWorker,
+        idfaProvider: IDFAProvider
     ) {
         setupReceivedArguments = (
             batchSender,
             queue,
             networkTypeProvider,
             counter,
-            batchWorker
+            batchWorker,
+            idfaProvider
         )
         setupWasCalled += 1
     }
@@ -94,13 +97,13 @@ final class BatchProcessorMock: BatchProcessor {
         setUserTokenReceivedValue = token
     }
 
-    // - MARK: setIDFA
+    // MARK: - setCustomHeaders
 
-    private(set) var setIDFAWasCalled: Int = 0
-    private(set) var setIDFAReceivedValue: (() -> String)?
+    private(set) var setCustomHeadersReceivedValue: [String: String]?
+    private(set) var setCustomHeadersWasCalled: Int = 0
 
-    func setIDFA(_ idfa: @escaping () -> String) {
-        setIDFAWasCalled += 1
-        setIDFAReceivedValue = idfa
+    func setCustomHeaders(_ headers: [String: String]) {
+        setCustomHeadersWasCalled += 1
+        setCustomHeadersReceivedValue = headers
     }
 }

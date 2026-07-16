@@ -173,8 +173,9 @@ final class BatchProcessorImplTests: XCTestCase {
 
     // MARK: SendEventSync
 
-    func testSendEventSync() {
+    func testSendEventSync() async {
         // given
+        let mirror = BatchProcessorImplMirror(reflecting: batchProcessor)
         jsonSerializerMock.dataStub = TestData.data
         counterMock.incrementedCountStub = 0
         batchProcessor.setup(
@@ -195,9 +196,12 @@ final class BatchProcessorImplTests: XCTestCase {
         // when
         batchProcessor.sendEventSync(event: TestData.event, completion: completion)
         dispatchMock.asyncReceivedWork?()
-        batchSenderMock.sendBatchReceivedCompletion?(true)
+        await batchSenderMock.awaitSendEntered()
+        batchSenderMock.completeSend(true)
+        await mirror.sendTask?.value
+        dispatchMock.asyncReceivedWork?()
         // then
-        XCTAssertEqual(dispatchMock.asyncWasCalled, 2)
+        XCTAssertEqual(dispatchMock.asyncWasCalled, 3)
         XCTAssertNotNil(dispatchMock.asyncReceivedWork)
         XCTAssertEqual(completionWasCalled, 1)
         XCTAssertEqual(completionReceivedArgument, true)
@@ -316,8 +320,9 @@ final class BatchProcessorImplTests: XCTestCase {
 
     // MARK: didSendBatch
 
-    func testSendBatchAddBatch() {
+    func testSendBatchAddBatch() async {
         // given
+        let mirror = BatchProcessorImplMirror(reflecting: batchProcessor)
         storageMock.nextBatchStub = TestData.nextBatch
         jsonSerializerMock.dataStub = TestData.data
         counterMock.incrementedCountStub = 0
@@ -330,14 +335,18 @@ final class BatchProcessorImplTests: XCTestCase {
         )
         // when
         batchProcessor.addBatch(withEvents: [TestData.event])
+        await batchSenderMock.awaitSendEntered()
         // then
         XCTAssertEqual(batchSenderMock.sendBatchWasCalled, 1)
         XCTAssertEqual(batchSenderMock.sendBatchReceivedData, TestData.data)
+        // cleanup
+        batchSenderMock.completeSend(true)
+        await mirror.sendTask?.value
     }
 
     // completion successfully
 
-    func testDidSendBatchSuccessfullyAddBatch() {
+    func testDidSendBatchSuccessfullyAddBatch() async {
         // given
         storageMock.nextBatchStub = TestData.nextBatch
         jsonSerializerMock.dataStub = TestData.data
@@ -351,12 +360,15 @@ final class BatchProcessorImplTests: XCTestCase {
             batchWorker: batchWorkerMock
         )
         batchProcessor.addBatch(withEvents: [TestData.event])
+        await batchSenderMock.awaitSendEntered()
         // when
-        batchSenderMock.sendBatchReceivedCompletion?(true)
-        dispatchMock.asyncReceivedWork?()
+        batchSenderMock.completeSend(true)
+        await mirror.sendTask?.value
+        dispatchMock.asyncReceivedWork?() // completion hop -> didSendBatch
+        dispatchMock.asyncReceivedWork?() // deferred storage removal
         // then
         XCTAssertEqual(loggerMock.debugReceivedMessage?.contains("did send batch:"), true)
-        XCTAssertEqual(dispatchMock.asyncWasCalled, 1)
+        XCTAssertEqual(dispatchMock.asyncWasCalled, 2)
         XCTAssertEqual(storageMock.removeBatchWasCalled, 1)
         XCTAssertNil(mirror.sendingBatch)
         if case .normal = mirror.state {
@@ -366,7 +378,7 @@ final class BatchProcessorImplTests: XCTestCase {
         }
     }
 
-    func testDidSendBatchSuccessfullyWithRemoveErrorAddBatch() {
+    func testDidSendBatchSuccessfullyWithRemoveErrorAddBatch() async {
         // given
         storageMock.nextBatchStub = TestData.nextBatch
         jsonSerializerMock.dataStub = TestData.data
@@ -380,14 +392,17 @@ final class BatchProcessorImplTests: XCTestCase {
             batchWorker: batchWorkerMock
         )
         batchProcessor.addBatch(withEvents: [TestData.event])
+        await batchSenderMock.awaitSendEntered()
+        batchSenderMock.completeSend(true)
+        await mirror.sendTask?.value
         storageMock.removeBatchReceivedError = CustomError.random
-        batchSenderMock.sendBatchReceivedCompletion?(true)
         // when
-        dispatchMock.asyncReceivedWork?()
+        dispatchMock.asyncReceivedWork?() // completion hop -> didSendBatch
+        dispatchMock.asyncReceivedWork?() // deferred storage removal (throws)
         // then
         XCTAssertEqual(loggerMock.debugReceivedMessage?.contains("did send batch:"), true)
         XCTAssertEqual(loggerMock.errorReceivedMessage?.contains("attempt to remove batch failed  with error"), true)
-        XCTAssertEqual(dispatchMock.asyncWasCalled, 1)
+        XCTAssertEqual(dispatchMock.asyncWasCalled, 2)
         XCTAssertEqual(storageMock.removeBatchWasCalled, 1)
         XCTAssertNil(mirror.sendingBatch)
         if case .normal = mirror.state {
@@ -397,7 +412,7 @@ final class BatchProcessorImplTests: XCTestCase {
         }
     }
 
-    func testDidSendBatchSuccessfullyWithNoMemoryAddBatch() {
+    func testDidSendBatchSuccessfullyWithNoMemoryAddBatch() async {
         // given
         storageMock.nextBatchStub = TestData.nextBatch
         jsonSerializerMock.dataStub = TestData.data
@@ -414,16 +429,19 @@ final class BatchProcessorImplTests: XCTestCase {
         batchProcessor.addBatch(withEvents: [TestData.event])
         batchProcessor.addBatch(withEvents: [TestData.eventTwo])
         // when
-        batchSenderMock.sendBatchReceivedCompletion?(true)
+        await batchSenderMock.awaitSendEntered()
+        batchSenderMock.completeSend(true)
+        await mirror.sendTask?.value
+        dispatchMock.asyncReceivedWork?() // completion hop -> didSendBatch
         // then
-        XCTAssertEqual(dispatchMock.asyncWasCalled, 1)
+        XCTAssertEqual(dispatchMock.asyncWasCalled, 2)
         XCTAssertEqual(mirror.batches.count, 1)
         XCTAssertNil(mirror.sendingBatch)
     }
 
     // completion failure
 
-    func testDidSendBatchFailureAddBatch() {
+    func testDidSendBatchFailureAddBatch() async {
         // given
         storageMock.nextBatchStub = TestData.nextBatch
         jsonSerializerMock.dataStub = TestData.data
@@ -437,10 +455,13 @@ final class BatchProcessorImplTests: XCTestCase {
             batchWorker: batchWorkerMock
         )
         batchProcessor.addBatch(withEvents: [TestData.event])
+        await batchSenderMock.awaitSendEntered()
         // when
-        batchSenderMock.sendBatchReceivedCompletion?(false)
+        batchSenderMock.completeSend(false)
+        await mirror.sendTask?.value
+        dispatchMock.asyncReceivedWork?() // completion hop -> didSendBatch
         // then
-        XCTAssertEqual(dispatchMock.asyncWasCalled, 0)
+        XCTAssertEqual(dispatchMock.asyncWasCalled, 1)
         XCTAssertEqual(storageMock.removeBatchWasCalled, 0)
         XCTAssertNil(mirror.sendingBatch)
         if case .needRetain = mirror.state {
@@ -452,7 +473,7 @@ final class BatchProcessorImplTests: XCTestCase {
 
     // sendBatchDelayed
 
-    func testDidSendBatchNeedRetainAddBatch() {
+    func testDidSendBatchNeedRetainAddBatch() async {
         // given
         storageMock.nextBatchStub = TestData.nextBatch
         jsonSerializerMock.dataStub = TestData.data
@@ -466,9 +487,13 @@ final class BatchProcessorImplTests: XCTestCase {
             batchWorker: batchWorkerMock
         )
         batchProcessor.addBatch(withEvents: [TestData.event])
-        batchSenderMock.sendBatchReceivedCompletion?(false)
+        await batchSenderMock.awaitSendEntered()
+        batchSenderMock.completeSend(false)
+        await mirror.sendTask?.value
+        dispatchMock.asyncReceivedWork?() // completion hop -> didSendBatch schedules retry
         // when
         batchWorkerMock.sendBatchDelayedReceivedEvent?()
+        await batchSenderMock.awaitSendEntered()
         // then
         XCTAssertEqual(batchSenderMock.sendBatchWasCalled, 2)
         XCTAssertEqual(batchWorkerMock.sendBatchDelayedWasCalled, 1)
@@ -479,6 +504,9 @@ final class BatchProcessorImplTests: XCTestCase {
         } else {
             XCTFail("Default value state equal normal")
         }
+        // cleanup
+        batchSenderMock.completeSend(true)
+        await mirror.sendTask?.value
     }
 
     // MARK: addBatch
@@ -555,16 +583,18 @@ final class BatchProcessorImplTests: XCTestCase {
     func testAddBatchWithProvidedValidIDFA() {
         // given
         userStorageMock.loadBatchesStub = []
+        let idfaProviderMock = IDFAProviderMock()
+        idfaProviderMock.currentIDFAStub = TestData.validIDFA
         batchProcessor.setup(
             batchSender: batchSenderMock,
             queue: dispatchMock,
             networkTypeProvider: networkProviderMock,
             counter: counterMock,
-            batchWorker: batchWorkerMock
+            batchWorker: batchWorkerMock,
+            idfaProvider: idfaProviderMock
         )
         counterMock.incrementedCountStub = 0
         // when
-        batchProcessor.setIDFA { TestData.validIDFA }
         batchProcessor.addBatch(withEvents: [TestData.event])
         let batches = storageMock.addBatchReceivedBatch
         let meta = batches?["meta"] as? [String: Any]
@@ -572,19 +602,21 @@ final class BatchProcessorImplTests: XCTestCase {
         XCTAssertEqual(meta?["device_ad_id"] as? String, TestData.validIDFA)
     }
 
-    func testAddBatchWithProvidedInvalidIDFA() {
+    func testAddBatchWithEmptyIDFA() {
         // given
         userStorageMock.loadBatchesStub = []
+        let idfaProviderMock = IDFAProviderMock()
+        idfaProviderMock.currentIDFAStub = ""
         batchProcessor.setup(
             batchSender: batchSenderMock,
             queue: dispatchMock,
             networkTypeProvider: networkProviderMock,
             counter: counterMock,
-            batchWorker: batchWorkerMock
+            batchWorker: batchWorkerMock,
+            idfaProvider: idfaProviderMock
         )
         counterMock.incrementedCountStub = 0
         // when
-        batchProcessor.setIDFA { TestData.invalidIDFA }
         batchProcessor.addBatch(withEvents: [TestData.event])
         let batches = storageMock.addBatchReceivedBatch
         let meta = batches?["meta"] as? [String: Any]
@@ -663,16 +695,35 @@ final class BatchProcessorImplTests: XCTestCase {
         XCTAssertEqual(mirror.deviceId, TestData.deviceId)
     }
 
-    // MARK: setIDFA
+    // MARK: setup idfaProvider
 
-    func testSetIDFA() {
+    func testSetupInjectsIDFAProvider() {
         // given
         let mirror = BatchProcessorImplMirror(reflecting: batchProcessor)
-        let idfaClosure: () -> String = { TestData.validIDFA }
+        let idfaProviderMock = IDFAProviderMock()
         // when
-        batchProcessor.setIDFA(idfaClosure)
+        batchProcessor.setup(
+            batchSender: batchSenderMock,
+            queue: dispatchMock,
+            networkTypeProvider: networkProviderMock,
+            counter: counterMock,
+            batchWorker: batchWorkerMock,
+            idfaProvider: idfaProviderMock
+        )
         // then
-        XCTAssertNotNil(mirror.idfa)
+        XCTAssertIdentical(mirror.idfaProvider as? IDFAProviderMock, idfaProviderMock)
+    }
+
+    // MARK: setCustomHeaders
+
+    func testSetCustomHeaders() {
+        // given
+        let headers = ["X-Custom": "value"]
+        // when
+        batchProcessor.setCustomHeaders(headers)
+        // then
+        XCTAssertEqual(batchSenderMock.setCustomHeadersWasCalled, 1)
+        XCTAssertEqual(batchSenderMock.setCustomHeadersReceivedValue, headers)
     }
 }
 
@@ -702,7 +753,7 @@ private extension BatchProcessorImplTests {
         static let appVersion = "16.0"
         static let model = "arm64"
         static let manufacturer = "Apple"
-        static let analyticsSdkVersion = "4.0.0"
+        static let analyticsSdkVersion = "3.5.26"
         static let validIDFA = "01234567-1234-1234-1234-123456789012"
         static let invalidIDFA = "00000000-0000-0000-0000-000000000000"
     }
@@ -731,11 +782,12 @@ private extension BatchProcessorImplTests {
         var storage: Storage? { extract() }
         var batches: [BatchModel] { extract() }
         var sendingBatch: BatchModel? { extract() }
+        var sendTask: Task<Void, Never>? { extract() }
         var state: BatchProcessorImpl.BatchProcessingState { extract() }
 
         var isNewLaunch: Bool { extract() }
         var deviceId: String? { extract() }
-        var idfa: (() -> String)? { extract() }
+        var idfaProvider: IDFAProvider? { extract() }
         var isSending: Bool { extract() }
         var isExecutingInBackground: Bool { extract() }
         var batchesBeingSentIds: Set<String> { extract() }

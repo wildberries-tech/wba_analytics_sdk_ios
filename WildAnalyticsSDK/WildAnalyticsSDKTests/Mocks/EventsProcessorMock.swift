@@ -26,9 +26,11 @@ final class EventsProcessorMock: EventsProcessor {
     private(set) var setupReceivedDropCache: Bool?
     private(set) var setupReceivedQueue: DispatchQueue?
     private(set) var setupReceivedBatchConfig: BatchConfig?
+    private(set) var setupReceivedIDFAConfig: IDFAConfig?
     private(set) var setupReceivedNetworkTypeProvider: NetworkTypeProviderProtocol?
     private(set) var setupReceivedEnumerationCounter: EnumerationCounter?
     private(set) var setupReceivedUserEngagementTracker:  UserEngagementTrackerProtocol?
+    private(set) var setupReceivedSessionDelegate: URLSessionDelegate?
 
     // MARK: - Methods
 
@@ -38,9 +40,11 @@ final class EventsProcessorMock: EventsProcessor {
         dropCache: Bool,
         queue: DispatchQueue?,
         batchConfig: BatchConfig,
+        idfaConfig: IDFAConfig,
         networkTypeProvider: NetworkTypeProviderProtocol,
         enumerationCounter: EnumerationCounter,
-        userEngagementTracker:  UserEngagementTrackerProtocol?
+        userEngagementTracker:  UserEngagementTrackerProtocol?,
+        sessionDelegate: URLSessionDelegate?
     ) {
         setupWasCalled += 1
         setupReceivedApiKey = apiKey
@@ -48,9 +52,11 @@ final class EventsProcessorMock: EventsProcessor {
         setupReceivedDropCache = dropCache
         setupReceivedQueue = queue
         setupReceivedBatchConfig = batchConfig
+        setupReceivedIDFAConfig = idfaConfig
         setupReceivedNetworkTypeProvider = networkTypeProvider
         setupReceivedEnumerationCounter = enumerationCounter
         setupReceivedUserEngagementTracker = userEngagementTracker
+        setupReceivedSessionDelegate = sessionDelegate
 
     }
 
@@ -104,6 +110,22 @@ final class EventsProcessorMock: EventsProcessor {
         self.setUserTokenReceivedValue = token
     }
 
+    private(set) var setCustomHeaderWasCalled: Int = 0
+    private(set) var setCustomHeaderReceivedValue: (key: String, value: String)?
+
+    func setCustomHeader(key: String, value: String) {
+        setCustomHeaderWasCalled += 1
+        setCustomHeaderReceivedValue = (key, value)
+    }
+
+    private(set) var setCustomHeadersWasCalled: Int = 0
+    private(set) var setCustomHeadersReceivedValue: [String: String]?
+
+    func setCustomHeaders(_ headers: [String: String]) {
+        setCustomHeadersWasCalled += 1
+        setCustomHeadersReceivedValue = headers
+    }
+
     private(set) var setSessionValueReceivedValue: String?
     private(set) var setSessionValueWasCalled: Int = 0
 
@@ -118,13 +140,5 @@ final class EventsProcessorMock: EventsProcessor {
     func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
         setOnSessionValueUpdatedReceivedValue = handler
         setOnSessionValueUpdatedWasCalled += 1
-    }
-
-    private(set) var setIDFAWasCalled: Int = 0
-    private(set) var setIDFAReceivedValue: (() -> String)?
-
-    func setIDFA(_ idfa: @escaping () -> String) {
-        setIDFAWasCalled += 1
-        setIDFAReceivedValue = idfa
     }
 }

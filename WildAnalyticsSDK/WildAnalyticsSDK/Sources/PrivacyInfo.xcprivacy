@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The SDK performs device fingerprinting for install attribution and reads the
+	     IDFA, so it is a tracking SDK. Apps linking it must present the ATT prompt. -->
+	<key>NSPrivacyTracking</key>
+	<true/>
+
+	<key>NSPrivacyTrackingDomains</key>
+	<array>
+		<!-- DeviceFingerprintService: POST /fingerprint/check -->
+		<string>wildtracker.wb.ru</string>
+	</array>
+
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+		<!-- IDFA (meta.device_ad_id) and identifierForVendor (meta.device_id). -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+
+		<!-- Events logged through WBAnalytics (application_start, session_start,
+		     user engagement and host-app custom events). -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+
+		<!-- Device fingerprint signals used for attribution: screen resolution, pixel
+		     ratio, platform, device model, OS version, language, timezone, synthesized
+		     user agent, network type, RAM and CPU. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+	</array>
+
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<!-- UserDefaults.standard and UserDefaults(suiteName:) for attribution state,
+		     first-launch flag, event enumeration counter and session values. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+
+		<!-- FileLogger reads file metadata (size) of its own log file in the app's
+		     Caches directory to rotate it. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

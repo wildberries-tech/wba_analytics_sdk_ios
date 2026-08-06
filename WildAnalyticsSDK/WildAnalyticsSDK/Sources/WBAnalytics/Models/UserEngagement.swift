@@ -10,16 +10,24 @@ public struct UserEngagement: Equatable {
     let screenName: String
     let textSize: TextSize?
     let authType: String?
+    let scaleFactor: String?
 
     /// Инициализатор UserEngagement.
     /// - Parameters:
     ///   - screenName: Название экрана.
     ///   - textSize: Флаг определяющий предпочитаемое изменение размера текста.
     ///   - authType: Тип с помощью какого сдк был авторизован пользователь
-    public init(screenName: String, textSize: TextSize?, authType: String?) {
+    ///   - scaleFactor: пользовательские настройки размера шрифта
+    public init(
+        screenName: String,
+        textSize: TextSize?,
+        authType: String?,
+        scaleFactor: String?
+    ) {
         self.screenName = screenName
         self.textSize = textSize
         self.authType = authType
+        self.scaleFactor = scaleFactor
     }
 
     var dictionary: [String: Any]? {
@@ -29,6 +37,9 @@ public struct UserEngagement: Equatable {
         }
         if let textSize {
             result[.textSize] = textSize.rawValue
+        }
+        if let scaleFactor {
+            result[.scaleFactor] = scaleFactor
         }
         return result
     }
@@ -52,4 +63,5 @@ private extension String {
     static let screenName = "screen_name"
     static let textSize = "text_size"
     static let authType = "auth_type"
+    static let scaleFactor = "scale_factor"
 }

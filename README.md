@@ -7,7 +7,7 @@ SDK для логирования событий в IOS-приложении. С
 SDK поставляется через SPM, для добавления в свой проект достаточно добавить в свой проект 
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.0.1")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.0.2")
 ```
 
 ## 🚀 Launch in app
@@ -16,13 +16,14 @@ SDK поставляется через SPM, для добавления в св
 
 Для создания экземпляра WildAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
     
-- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
+- **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBAnalyticsKit/WBAnalyticsKitTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL, на который будут отправляться аналитические данные.
-- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
+- **isFirstLaunch:** Флаг, указывающий, является ли текущий запуск приложения первым.  (хранится где-то у вас допустим в UserDefaults [пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBAnalyticsKit/WBAnalyticsKitTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
 - **enableAttributionTracking:** Включение/выключение автоматической атрибуции трафика. 
 - **loggingOptions:** Настройки логирования, включая уровень логирования и файловую запись. [Подробнее](.Docs/LoggingOptions.md)
 - **networkTypeProvider:** Объект, предоставляющий информацию о текущем типе сети.
 - **batchConfig:** Конфигурация пакетной отправки данных.
+- **idfaConfig:** Конфигурация сбора рекламного идентификатора (IDFA). Необязательный параметр, по умолчанию `IDFAConfig()`. [Подробнее](#-idfa-device_ad_id)
 
 для каждого ресивера можно выставлять свои параметры и свои apiKey, после ресивер передается в единый инстанс. После инициализации нужно засетапить ресивер.
 
@@ -84,7 +85,6 @@ let reciever = WildAnalyticsReceiver(
 `AdSupport` и `AppTrackingTransparency` подключаются как weak-фреймворки. Приложение, которому сбор IDFA не нужен, может выставить `IDFAConfig(isDisabled: true)`.
 
 > Не забудьте про требования App Store: при использовании IDFA приложение должно объявить причину доступа в `PrivacyInfo.xcprivacy` и, если показывает ATT-промт, добавить `NSUserTrackingUsageDescription` в `Info.plist`.
-
 
 ## 🧑‍💻 Log events
 
@@ -187,17 +187,16 @@ public protocol WildAnalyticsDelegateProtocol: AnyObject {
 
 Метод делегата didResolveAttributedLink вызовется только если в атрибуцированных данных будет найдена ссылка. 
 
-### 6. Трекинг IDFA
-
-```swift
-service.setIDFA(<idfa>)
-```
 
 ## 📝 F.A.Q
 
  - **Нужно ли вызвать trackEvent не в main queue?** 
 
 Ответ: Нет. SDK самостоятельно оперирует очередью, вызывать можно из любого места.
+
+ - **Как указать нужный api key** 
+
+Ответ: у каждого ресивера есть environment параметр в инициализаторе .production/.test/.custom("YOU_API_KEY")
 
  - **Как передавать токен пользователя**
 

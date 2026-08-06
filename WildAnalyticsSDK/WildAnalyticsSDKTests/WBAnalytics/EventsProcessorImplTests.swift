@@ -56,6 +56,7 @@ final class EventsProcessorImplTests: XCTestCase {
     }
 
     override func tearDown() {
+        UserDefaults.standard.removeObject(forKey: TestData.newLaunchKey)
         timerMakerMock.reset()
         super.tearDown()
     }
@@ -710,6 +711,31 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
         XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["text_size"] as? Int, 2)
         XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["auth_type"] as? String, "noAuth")
+        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["scale_factor"] as? String, "scaleFactor")
+    }
+
+    func testDidUserEngagementTrackerFireWithoutScaleFactor() {
+        // given
+        enumerationCounterMock.incrementedCountStub = 0
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: true,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock,
+            userEngagementTracker: userEngagementTrackerMock
+        )
+        sleep(milliseconds: 500)
+        let mirror = Mirror(reflecting: processor)
+        // when
+        processor.didUserEngagementTrackerFire(TestData.userEngagementWithoutScaleFactor)
+        sleep(milliseconds: 500)
+        // then the key is omitted rather than sent as null
+        XCTAssertEqual(mirror.events[1]["name"] as? String, "user_engagement")
+        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
+        XCTAssertNil((mirror.events[1]["data"] as? [String: Any])?["scale_factor"])
     }
 
     // MARK: setDeviceId
@@ -825,7 +851,18 @@ final class EventsProcessorImplTests: XCTestCase {
 private extension EventsProcessorImplTests {
     enum TestData {
         static let deviceId = "deviceId"
-        static let userEngagement: UserEngagement = .init(screenName: "event", textSize: .small, authType: "noAuth")
+        static let userEngagement = UserEngagement(
+            screenName: "event",
+            textSize: .small,
+            authType: "noAuth",
+            scaleFactor: "scaleFactor"
+        )
+        static let userEngagementWithoutScaleFactor = UserEngagement(
+            screenName: "event",
+            textSize: .small,
+            authType: "noAuth",
+            scaleFactor: nil
+        )
         static let url = URL(string: "https://example.com")!
         static let event: Event = .init(meta: ["Meta": 123], batchNum: 0, events: [["name":321]])
         static let parameters: [String: Int] = [event2String: 123]

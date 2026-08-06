@@ -5,7 +5,6 @@
 import Foundation
 import CoreData
 
-@objc(BatchEntity)
 class BatchEntity: NSManagedObject {
     @NSManaged var createdAt: Date?
     @NSManaged var data: String?
@@ -16,15 +15,15 @@ class BatchEntity: NSManagedObject {
     }
 
     static let schema: NSEntityDescription = {
-        let entityName = NSStringFromClass(BatchEntity.self)
-        let entity = NSEntityDescription()
-        entity.managedObjectClassName = entityName
-        entity.name = entityName
-
         // Создаём сущность BatchEntity
         let batchEntity = NSEntityDescription()
+        // Имя сущности участвует в метаданных хранилища: менять его нельзя, иначе
+        // существующие хранилища станут нечитаемыми.
         batchEntity.name = "BatchEntity"
-        batchEntity.managedObjectClassName = "BatchEntity"
+        // Имя класса разрешается через NSClassFromString, поэтому оно должно быть
+        // квалифицировано модулем — иначе Core Data может подставить BatchEntity
+        // из другой копии SDK.
+        batchEntity.managedObjectClassName = NSStringFromClass(BatchEntity.self)
 
         // Добавляем атрибуты к сущности
         let idAttribute = NSAttributeDescription()

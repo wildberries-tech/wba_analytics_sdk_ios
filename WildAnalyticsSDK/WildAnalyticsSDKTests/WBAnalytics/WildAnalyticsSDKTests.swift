@@ -405,7 +405,12 @@ private extension WildAnalyticsSDKTests {
         static let receiverIdentifier: String = "receiverIdentifier"
         static let name: String = "name"
         static let sessionValue = "1587023248356386046"
-        static let userEngagement: UserEngagement = .init(screenName: "name", textSize: .large, authType: "noAuth")
+        static let userEngagement = UserEngagement(
+                    screenName: "name",
+                    textSize: .large,
+                    authType: "noAuth",
+                    scaleFactor: "1.5"
+                )
         static let idfa = "01234567-1234-1234-1234-123456789012"
     }
 }

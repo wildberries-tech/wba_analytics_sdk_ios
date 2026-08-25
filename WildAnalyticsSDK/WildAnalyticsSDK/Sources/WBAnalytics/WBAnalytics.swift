@@ -74,6 +74,7 @@ public class WBAnalytics {
 
     /// This function is used to setup the analytics with the provided parameters.
     /// It should be called in your app's application:didFinishLaunchingWithOptions: method.
+    /// - Note: The `isFirstLaunch` parameter no longer affects the `first_open` event — the SDK determines the first launch on its own.
     public static func setup(
         apiKey: String,
         isFirstLaunch: Bool,
@@ -167,8 +168,11 @@ public class WBAnalytics {
     }
 
     /// This function is used to log a launch URL.
-    public func logLaunchURL(_ url: URL) {
-        processor.logLaunchURL(url)
+    /// - Parameters:
+    ///   - url: URL the app was opened with
+    ///   - referrerURL: Referrer of the link the app was opened with
+    public func logLaunchURL(_ url: URL, referrerURL: URL? = nil) {
+        processor.logLaunchURL(url, referrerURL: referrerURL)
     }
 
     /// This function is used to log an event with the provided parameters sync

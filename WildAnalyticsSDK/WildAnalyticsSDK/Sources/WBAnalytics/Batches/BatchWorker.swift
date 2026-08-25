@@ -3,45 +3,45 @@
 //
 
 /**
-`BatchWorkerImpl` - это класс, ответственный за управление отправкой пакетов событий с экспоненциальными задержками повторных попыток.
+`BatchWorkerImpl` is a class responsible for managing the sending of event batches with exponential retry delays.
 
-## Свойства
-- `batch`: Необязательный кортеж, содержащий идентификатор пакета и счетчик повторных попыток.
-- `queue`: Объект `Dispatcher`, используемый для асинхронного выполнения.
-- `batchConfig`: Объект `BatchConfig`, содержащий конфигурацию для пакетной обработки.
+## Properties
+- `batch`: An optional tuple containing the batch identifier and the retry counter.
+- `queue`: A `Dispatcher` object used for asynchronous execution.
+- `batchConfig`: A `BatchConfig` object containing the configuration for batch processing.
 
-## Методы
-1. `init(queue:batchConfig:)`: Инициализирует `BatchWorkerImpl` с объектом `Dispatcher` и `BatchConfig`.
+## Methods
+1. `init(queue:batchConfig:)`: Initializes `BatchWorkerImpl` with a `Dispatcher` object and a `BatchConfig`.
 
-2. `sendBatchDelayed(id:event:)`: Отправляет пакет событий с задержкой, основанной на идентификаторе пакета. Устанавливает состояние в `.wait` перед отправкой и возвращает его в `.available` после завершения. Задержка рассчитывается с использованием метода `getDeadline(id:)`.
+2. `sendBatchDelayed(id:event:)`: Sends an event batch with a delay based on the batch identifier. Sets the state to `.wait` before sending and returns it to `.available` after completion. The delay is calculated using the `getDeadline(id:)` method.
 
-3. `getDeadline(id:)`: Рассчитывает дедлайн для отправки пакета событий на основе идентификатора пакета и счетчика. Если `count` равен `1`, используется фиксированная задержка из `batchConfig`. В противном случае задержка рассчитывается по формуле `pow(.deadlineBody, Double(count)) + .deadlineConstant`.
+3. `getDeadline(id:)`: Calculates the deadline for sending an event batch based on the batch identifier and the counter. If `count` equals `1`, a fixed delay from `batchConfig` is used. Otherwise the delay is calculated by the formula `pow(.deadlineBody, Double(count)) + .deadlineConstant`.
 
-4. `getBatch(id:)`: Получает или создает пакет событий на основе идентификатора пакета. Если пакет с таким же идентификатором уже существует и счетчик меньше максимального значения, счетчик увеличивается. В противном случае создается новый пакет со счетчиком, равным `retraitStep`.
+4. `getBatch(id:)`: Gets or creates an event batch based on the batch identifier. If a batch with the same identifier already exists and the counter is below the maximum value, the counter is incremented. Otherwise a new batch is created with the counter set to `retraitStep`.
 
-## Использование
-1. Создайте экземпляр `BatchConfig` с необходимыми параметрами:
+## Usage
+1. Create an instance of `BatchConfig` with the required parameters:
    ```swift
    let batchConfig = BatchConfig(sendingDelay: 2.0)
    ```
 
-2. Создайте экземпляр `BatchWorkerImpl` с объектом `Dispatcher` и `BatchConfig`:
+2. Create an instance of `BatchWorkerImpl` with a `Dispatcher` object and a `BatchConfig`:
    ```swift
    let queue = DispatchQueue(label: "com.example.batchworker")
    let batchWorker = BatchWorkerImpl(queue: queue, batchConfig: batchConfig)
    ```
 
-3. Вызовите `sendBatchDelayed(id:event:)` для отправки пакета событий с задержкой:
+3. Call `sendBatchDelayed(id:event:)` to send an event batch with a delay:
    ```swift
    batchWorker.sendBatchDelayed(id: "batch_1") {
-       // Код для отправки пакета событий
+       // Code for sending the event batch
    }
    ```
 
-Задержка для каждого пакета рассчитывается на основе идентификатора пакета и счетчика. Максимальный счетчик - `maxRetraitCount`, после чего счетчик становится равен `1`.
+The delay for each batch is calculated based on the batch identifier and the counter. The maximum counter value is `maxRetraitCount`, after which the counter resets to `1`.
 
-### Значения задержки:
-- **count = 1**: Time = 2.0 (значение из `batchConfig.sendingDelay`)
+### Delay values:
+- **count = 1**: Time = 2.0 (value from `batchConfig.sendingDelay`)
 - **count = 2**: Time = 4.75
 - **count = 3**: Time = 5.87
 - **count = 4**: Time = 7.56

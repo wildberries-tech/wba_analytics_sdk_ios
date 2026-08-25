@@ -6,10 +6,11 @@ protocol EventsProcessor {
     /// Configuration for WBAnalytics.
     /// - Parameters:
     ///   - apiKey: Auth key for endpoint.
-    ///   - isFirstLaunch: First launch option, affects sending first run event
+    ///   - isFirstLaunch: Deprecated. No longer affects the first_open event — the SDK determines
+    ///     the first launch on its own. The value is only used to delay reading the IDFA on first launch.
     ///   - dropCache: Delete cached events
     ///   - queue: Queue for processing batches
-    ///   - batchConfig: Сonfiguration of batch sending parameters.
+    ///   - batchConfig: Configuration of batch sending parameters.
     ///   - networkTypeProvider: Object that returns the current network status.
     ///   - enumerationCounter: Counts sent events and batches.
     ///   - userEngagementTracker: Tracker for shown screens.
@@ -35,7 +36,10 @@ protocol EventsProcessor {
     /// Creates an event for user engagement
     func logUserEngagement(_ userEngagement: UserEngagement?)
     /// Creates an event for launch url
-    func logLaunchURL(_ url: URL)
+    /// - Parameters:
+    ///   - url: URL the app was opened with
+    ///   - referrerURL: Referrer of the link the app was opened with
+    func logLaunchURL(_ url: URL, referrerURL: URL?)
     /// Log an event to batch
     ///   - event: Event name.
     ///   - 'parameters': Event parameters
@@ -83,6 +87,8 @@ final class EventsProcessorImpl: EventsProcessor {
     private let timerMaker: TimerProtocol.Type
     private let sessionValueManager: SessionValueManagerProtocol
     private let appStartTracker: AppStartTrackerProtocol
+    private let heartbeatTracker: HeartbeatTrackerProtocol
+    private let firstOpenTracker: FirstOpenTrackerProtocol
 
     private var events = [Event]()
     private var commonParameters = [String: Any]()
@@ -102,6 +108,8 @@ final class EventsProcessorImpl: EventsProcessor {
         timerMaker: TimerProtocol.Type = Timer.self,
         sessionValueManager: SessionValueManagerProtocol = SessionValueManager.shared,
         appStartTracker: AppStartTrackerProtocol,
+        heartbeatTracker: HeartbeatTrackerProtocol = HeartbeatTracker(),
+        firstOpenTracker: FirstOpenTrackerProtocol = FirstOpenTracker(),
         queue: DispatchQueue = DispatchQueue(
             label: Constants.analyticsQueueName,
             qos: .default
@@ -115,6 +123,8 @@ final class EventsProcessorImpl: EventsProcessor {
         self.timerMaker = timerMaker
         self.sessionValueManager = sessionValueManager
         self.appStartTracker = appStartTracker
+        self.heartbeatTracker = heartbeatTracker
+        self.firstOpenTracker = firstOpenTracker
         self.queue = queue
     }
 
@@ -180,24 +190,32 @@ final class EventsProcessorImpl: EventsProcessor {
                 self.batchProcessor.setCustomHeaders(storedHeaders)
             }
             self.batchProcessor.launch()
-            self.checkOnNewLaunch()
-            if isFirstLaunch {
-                self.addEvent(Event.Name.firstOpen)
+            // FirstOpenTracker captures the migration flag (the legacy isNewLaunch key) once, when
+            // it's created in EventsProcessorImpl.init, rather than reading UserDefaults here — so
+            // the call order relative to checkOnNewLaunch() below (which creates that key) no longer
+            // affects the result of trackIfNeeded
+            self.firstOpenTracker.trackIfNeeded(apiKey: apiKey) { [weak self] in
+                self?.addEvent(Event.Name.firstOpen)
             }
+            self.checkOnNewLaunch()
 
             self.userEngagementTracker.start()
+            self.heartbeatTracker.setup { [weak self] in
+                self?.addEvent(Event.Name.heartbeat)
+            }
+            self.heartbeatTracker.start()
             self.startSendEventsTimer()
             if idfaDelay > 0 {
                 self.queue.asyncAfter(deadline: .now() + idfaDelay) { [weak idfaProvider] in
                     idfaProvider?.activate()
                 }
             }
+            // application_start now goes through the regular addEvent path: it's batched, persisted
+            // in CoreData, and retried by the shared batch pipeline — the tracker no longer has its
+            // own retry logic, which avoids duplicate events on a flaky network (see BatchProcessor's
+            // retry state machine).
             self.appStartTracker.setup { [weak self] input in
-                self?.processEventSync(
-                    input.name,
-                    parameters: input.parameters,
-                    completion: input.completion
-                )
+                self?.addEvent(input.name, parameters: input.parameters)
             }
         }
     }
@@ -205,6 +223,7 @@ final class EventsProcessorImpl: EventsProcessor {
     deinit {
         notificationCenter.removeObserver(self)
         stopSendEventsTimer()
+        heartbeatTracker.invalidate()
     }
 
     func setCommonParameters(_ parameters: [String: Any]) {
@@ -269,10 +288,13 @@ final class EventsProcessorImpl: EventsProcessor {
         }
     }
 
-    func logLaunchURL(_ url: URL) {
+    func logLaunchURL(_ url: URL, referrerURL: URL?) {
         async { [weak self] in
             guard let self else { return }
-            let parameters = ["link": url.absoluteString]
+            var parameters = ["link": url.absoluteString]
+            if let referrerURL {
+                parameters["referrerURL"] = referrerURL.absoluteString
+            }
             self.logger.debug(Constants.logLabel, "logLaunchURL parameters: \(parameters)")
             self.processEvent(Event.Name.openAppWithLink, parameters: parameters)
         }
@@ -284,6 +306,7 @@ final class EventsProcessorImpl: EventsProcessor {
         async { [weak self] in
             guard let self else { return }
             self.userEngagementTracker.start()
+            self.heartbeatTracker.start()
             self.startSendEventsTimer()
             self.logger.debug(Constants.logLabel, "willEnterForeground")
         }
@@ -294,6 +317,7 @@ final class EventsProcessorImpl: EventsProcessor {
             guard let self else { return }
             self.stopSendEventsTimer()
             self.userEngagementTracker.invalidate()
+            self.heartbeatTracker.invalidate()
             self.makeBatch()
             self.logger.debug(Constants.logLabel, "didEnterBackground")
         }
@@ -304,6 +328,7 @@ final class EventsProcessorImpl: EventsProcessor {
             guard let self else { return }
             self.stopSendEventsTimer()
             self.userEngagementTracker.invalidate()
+            self.heartbeatTracker.invalidate()
             self.makeBatch()
             self.logger.debug(Constants.logLabel, "willTerminate")
         }
@@ -402,7 +427,7 @@ final class EventsProcessorImpl: EventsProcessor {
             logger.debug(Constants.logLabel, "no events to make a batch, skipping")
             return
         }
-        let maxBytes = Constants.maxBatchSizeInBytes // 512 кб
+        let maxBytes = Constants.maxBatchSizeInBytes // 512 KB
         let batches = splitEventsByMaxBytes(events: events, maxBytes: maxBytes)
         for batch in batches {
             batchProcessor.addBatch(withEvents: batch)
@@ -421,7 +446,7 @@ private extension EventsProcessorImpl {
         for event in events {
             let size = eventSize(event)
             switch (size >= maxBytes, chunkSize + size >= maxBytes) {
-            // Событие больше лимита — отдельная пачка
+            // Event exceeds the limit on its own — goes into its own chunk
             case (true, _):
                 if !chunk.isEmpty {
                     result.append(chunk)
@@ -429,12 +454,12 @@ private extension EventsProcessorImpl {
                     chunkSize = 0
                 }
                 result.append([event])
-            // Не влезает в текущую пачку — сохраняем пачку, начинаем новую
+            // Doesn't fit in the current chunk — flush it and start a new one
             case (false, true):
                 if !chunk.isEmpty { result.append(chunk) }
                 chunk = [event]
                 chunkSize = size
-            // Влезает — добавляем в текущую пачку
+            // Fits — add it to the current chunk
             case (false, false):
                 chunk.append(event)
                 chunkSize += size
@@ -447,7 +472,7 @@ private extension EventsProcessorImpl {
     func eventSize(_ event: Event) -> Int {
         guard JSONSerialization.isValidJSONObject(event),
               let data = try? JSONSerialization.data(withJSONObject: event, options: []) else {
-            // Если объект нельзя сериализовать — возвращаем максимальный допустимый размер
+            // If the object can't be serialized — return the maximum allowed size
             return Constants.maxBatchSizeInBytes
         }
         return data.count

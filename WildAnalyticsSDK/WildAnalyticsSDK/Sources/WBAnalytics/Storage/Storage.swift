@@ -59,7 +59,7 @@ final class StorageImpl: Storage {
 
             do {
                 if let batchEntity = try context.fetch(fetchRequest).first {
-                    // Проверяем валидность объекта
+                    // Check that the object is valid
                     if batchEntity.isDeleted || batchEntity.managedObjectContext == nil {
                         logger.error(
                             Constants.logLabel,
@@ -96,7 +96,7 @@ final class StorageImpl: Storage {
             do {
                 let batches = try context.fetch(fetchRequest)
                 if let batchToDelete = batches.first {
-                    // Проверяем валидность объекта
+                    // Check that the object is valid
                     if batchToDelete.isDeleted || batchToDelete.managedObjectContext == nil {
                         logger.error(
                             Constants.logLabel,

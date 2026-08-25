@@ -105,4 +105,14 @@ final class AnalyticsReceiverMock: AnalyticsReceiver {
         checkAttributionWasCalled += 1
         checkAttributionCompletionReceivedValue = completion
     }
+
+    private(set) var trackLaunchURLWasCalled: Int = 0
+    private(set) var trackLaunchURLReceivedURL: URL?
+    private(set) var trackLaunchURLReceivedReferrerURL: URL?
+
+    func trackLaunchURL(_ url: URL, referrerURL: URL?) {
+        trackLaunchURLWasCalled += 1
+        trackLaunchURLReceivedURL = url
+        trackLaunchURLReceivedReferrerURL = referrerURL
+    }
 }

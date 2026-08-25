@@ -10,7 +10,7 @@ final class EnumerationCounterMock: EnumerationCounter {
 
     private(set) var incrementedCountReceivedKey: String?
     private(set) var incrementedCountWasCalled: Int = 0
-    var incrementedCountStub: Int!
+    var incrementedCountStub: Int = 0
 
     func incrementedCount(for key: String) -> Int {
         self.incrementedCountReceivedKey = key

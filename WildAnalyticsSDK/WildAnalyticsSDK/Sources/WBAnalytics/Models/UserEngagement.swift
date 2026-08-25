@@ -4,7 +4,7 @@
 
 import Foundation
 
-/// Модель данных для события `user_engagement`
+/// Data model for the `user_engagement` event
 public struct UserEngagement: Equatable {
 
     let screenName: String
@@ -12,12 +12,12 @@ public struct UserEngagement: Equatable {
     let authType: String?
     let scaleFactor: String?
 
-    /// Инициализатор UserEngagement.
+    /// UserEngagement initializer.
     /// - Parameters:
-    ///   - screenName: Название экрана.
-    ///   - textSize: Флаг определяющий предпочитаемое изменение размера текста.
-    ///   - authType: Тип с помощью какого сдк был авторизован пользователь
-    ///   - scaleFactor: пользовательские настройки размера шрифта
+    ///   - screenName: Screen name.
+    ///   - textSize: Flag indicating the preferred text size change.
+    ///   - authType: The type of SDK the user was authenticated with.
+    ///   - scaleFactor: The user's font size settings.
     public init(
         screenName: String,
         textSize: TextSize?,
@@ -47,13 +47,13 @@ public struct UserEngagement: Equatable {
 
 // MARK: - Structures
 
-/// Предпочитаемое изменение размера текстов в iOS (задаетсяв в User Accessibility)
+/// The preferred text size change on iOS (set in User Accessibility)
 public enum TextSize: Int {
-    /// Стандартный размер текста
+    /// Standard text size
     case standard
-    /// Увеличенные размеры текста
+    /// Larger text sizes
     case large
-    /// Уменьшенные размеры текста
+    /// Smaller text sizes
     case small
 }
 

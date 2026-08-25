@@ -30,6 +30,7 @@ extension Event {
         static let userEngagement = "user_engagement"
         static let firstOpen = "first_open"
         static let openAppWithLink = "dynamic_link_app_open"
+        static let heartbeat = "heartbeat"
     }
 }
 

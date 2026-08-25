@@ -171,6 +171,69 @@ analyticsService.checkAttribution { result in
         }
 ```
 
+## 📡 System events
+
+### Sent automatically by the SDK
+
+Fully initialized by the SDK — no client-side configuration is required.
+
+| Event | Trigger | Parameters |
+|---|---|---|
+| `heartbeat` | first send 30 seconds after the app is opened, then every 30 seconds while the app is in the foreground | none |
+| `first_open` | the first time the app is opened on the user's device, separately for each apiKey | none |
+| `application_start` | app launch or return from background | see the table below |
+
+`application_start` parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `start_location` | string | Where the app was opened from: `background` — brought back from background, `foreground` — launched from scratch, `unknown` — cannot be determined |
+| `cpu` | number | CPU clock frequency, GHz |
+| `ram` | number | Amount of RAM, GB |
+| `processor_name` | string | CPU name, e.g. `A18 Pro` |
+
+The `isFirstLaunch` parameter of the receiver initializer no longer affects `first_open`: the SDK
+detects the first launch on its own. The value is only used to delay reading the IDFA.
+
+On devices where the SDK was already running before this version shipped, the `first_open` event
+will not be sent — the SDK sees traces of a previous launch and treats it as a migration rather
+than a first open. This is a deliberate safeguard against a one-time spike of `first_open` across
+the entire existing install base, not data loss: for these users, `first_open` (or its equivalent)
+was already sent earlier, before this event existed in the SDK.
+
+### Sent by the client
+
+These events are not produced by the SDK — the app sends them. **Both events are required for correct
+attribution.**
+
+`dynamic_link_app_open` — the app was opened via a link:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `link` | string | The URL the app was opened with |
+| `referrerURL` | string | The referrer of the link the app was opened with; optional, omitted from the event if not provided |
+
+```swift
+service.trackLaunchURL(url, referrerURL: referrerURL)
+```
+
+`dynamic_push_app_open` — the app was opened from a push notification:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `link` | string | The URL path of the push |
+| `push` | string | The push text |
+
+```swift
+service.trackEvent(
+    name: "dynamic_push_app_open",
+    parameters: [
+        "link": pushLink,
+        "push": pushText
+    ]
+)
+```
+
 ## 📝 F.A.Q
 
  - **Do I need to call trackEvent not in the main queue?** 

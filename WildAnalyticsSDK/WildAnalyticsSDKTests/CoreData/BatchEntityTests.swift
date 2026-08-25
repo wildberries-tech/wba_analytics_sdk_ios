@@ -32,20 +32,20 @@ final class BatchEntityTests: XCTestCase {
         XCTAssertTrue(createdAtAttribute.isOptional)
     }
 
-    /// Несколько копий SDK (публичная и приватная) могут быть слинкованы в одно приложение.
-    /// Objective-C runtime имеет одно плоское пространство имён на процесс, поэтому
-    /// `@objc(BatchEntity)` привёл бы к тому, что обе копии зарегистрировали бы класс под
-    /// именем `BatchEntity`, победитель выбирался бы недетерминированно, а проигравшая копия
-    /// падала бы на приведении результата fetch к своему типу.
+    /// Several copies of the SDK (public and private) can be linked into a single app.
+    /// The Objective-C runtime has one flat namespace per process, so `@objc(BatchEntity)`
+    /// would make both copies register a class under the name `BatchEntity`; the winner
+    /// would be picked nondeterministically, and the losing copy would crash when casting
+    /// the fetch result to its own type.
     func testClassDoesNotOccupyFlatObjCName() {
         XCTAssertNil(
             NSClassFromString("BatchEntity"),
-            "BatchEntity не должен регистрироваться в Objective-C runtime без префикса модуля"
+            "BatchEntity must not be registered in the Objective-C runtime without a module prefix"
         )
     }
 
-    /// Модель должна ссылаться на класс *своего* модуля, а не на строку `BatchEntity`,
-    /// которая может разрешиться в класс другой копии SDK.
+    /// The model must reference the class of *its own* module rather than the string
+    /// `BatchEntity`, which could resolve to another copy of the SDK's class.
     func testSchemaClassNameIsModuleQualified() {
         // when
         let entity = BatchEntity.schema
@@ -54,12 +54,12 @@ final class BatchEntityTests: XCTestCase {
         XCTAssertEqual(entity.managedObjectClassName, NSStringFromClass(BatchEntity.self))
         XCTAssertTrue(
             NSClassFromString(entity.managedObjectClassName) === BatchEntity.self,
-            "managedObjectClassName должен разрешаться в BatchEntity этого модуля"
+            "managedObjectClassName must resolve to this module's BatchEntity"
         )
     }
 
-    /// Имя сущности участвует в метаданных хранилища и version hash. Его изменение сделает
-    /// существующие хранилища нечитаемыми и потребует model migration.
+    /// The entity name is part of the store metadata and the version hash. Changing it
+    /// would make existing stores unreadable and require a model migration.
     func testSchemaEntityNameIsStable() {
         XCTAssertEqual(BatchEntity.schema.name, "BatchEntity")
     }

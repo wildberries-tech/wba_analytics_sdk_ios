@@ -25,6 +25,8 @@ final class EventsProcessorImplTests: XCTestCase {
     private var requestInterceptorMock: RequestInterceptorMock!
     private var sessionValueManagerMock: SessionValueManagerMock!
     private var appStartTrackerMock: AppStartTrackerMock!
+    private var heartbeatTrackerMock: HeartbeatTrackerMock!
+    private var firstOpenTrackerMock: FirstOpenTrackerMock!
 
     override func setUp() {
         super.setUp()
@@ -43,6 +45,8 @@ final class EventsProcessorImplTests: XCTestCase {
         sessionValueManagerMock = .init()
         sessionValueManagerMock.sessionValue = TestData.sessionValue
         appStartTrackerMock = .init()
+        heartbeatTrackerMock = .init()
+        firstOpenTrackerMock = .init()
         processor = EventsProcessorImpl(
             batchProcessor: batchProcessorMock,
             logger: loggerMock,
@@ -51,12 +55,13 @@ final class EventsProcessorImplTests: XCTestCase {
             notificationCenter: notificationCenterMock,
             timerMaker: timerMakerMock,
             sessionValueManager: sessionValueManagerMock,
-            appStartTracker: appStartTrackerMock
+            appStartTracker: appStartTrackerMock,
+            heartbeatTracker: heartbeatTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
         )
     }
 
     override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: TestData.newLaunchKey)
         timerMakerMock.reset()
         super.tearDown()
     }
@@ -70,7 +75,9 @@ final class EventsProcessorImplTests: XCTestCase {
             logger: loggerMock,
             analyticsURL: TestData.url,
             interceptor: requestInterceptorMock,
-            appStartTracker: appStartTrackerMock
+            appStartTracker: appStartTrackerMock,
+            heartbeatTracker: heartbeatTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
         )
         let mirror = Mirror(reflecting: processor)
         // then
@@ -86,6 +93,7 @@ final class EventsProcessorImplTests: XCTestCase {
     func testDefaultInitSetup() {
         // given
         let mirror = Mirror(reflecting: processor)
+        firstOpenTrackerMock.shouldTrack = false
         // when
         processor.setup(
             apiKey: TestData.apiKey,
@@ -220,6 +228,10 @@ final class EventsProcessorImplTests: XCTestCase {
         UserDefaults.standard.set(true, forKey: TestData.newLaunchKey)
         enumerationCounterMock.incrementedCountStub = 1
         let mirror = Mirror(reflecting: processor)
+        // first_open is processed asynchronously on the queue (addEvent), so it would land in
+        // events AFTER the makeBatch call from checkOnNewLaunch — disable it so this test checks
+        // exactly that state, without mixing in the independent first_open flow
+        firstOpenTrackerMock.shouldTrack = false
         // when
         processor.setup(
             apiKey: TestData.apiKey,
@@ -283,11 +295,35 @@ final class EventsProcessorImplTests: XCTestCase {
         )
     }
 
-    func testIsFirstLaunchSetup() {
+    func testFirstOpenIsSentWithoutClientFlag() {
         // given
         let mirror = Mirror(reflecting: processor)
-        let timeString = Date().asString
         enumerationCounterMock.incrementedCountStub = 0
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // then
+        XCTAssertEqual(firstOpenTrackerMock.trackIfNeededWasCalled, 1)
+        XCTAssertEqual(firstOpenTrackerMock.trackIfNeededReceivedApiKey, TestData.apiKey)
+        XCTAssertEqual(mirror.events.first?["event_num"] as? Int, 0)
+        XCTAssertEqual(mirror.events.first?["name"] as? String, "first_open")
+        XCTAssertEqual(mirror.events.first?["session_value"] as? String, TestData.sessionValue)
+        XCTAssertEqual((mirror.events.first?["data"] as? [String: Any])?.isEmpty, true)
+    }
+
+    func testFirstOpenIsNotSentWhenTrackerSaysAlreadySent() {
+        // given
+        let mirror = Mirror(reflecting: processor)
+        enumerationCounterMock.incrementedCountStub = 0
+        firstOpenTrackerMock.shouldTrack = false
         // when
         processor.setup(
             apiKey: TestData.apiKey,
@@ -300,10 +336,8 @@ final class EventsProcessorImplTests: XCTestCase {
         )
         sleep(milliseconds: 300)
         // then
-        XCTAssertEqual(mirror.events.first?["event_num"] as? Int, 0)
-        XCTAssertEqual(mirror.events.first?["name"] as? String, "first_open")
-        XCTAssertEqual(mirror.events.first?["session_value"] as? String, TestData.sessionValue)
-        XCTAssertEqual((mirror.events.first?["data"] as? [String: Any])?.isEmpty, true)
+        XCTAssertEqual(firstOpenTrackerMock.trackIfNeededWasCalled, 1)
+        XCTAssertNil(mirror.events.first { $0["name"] as? String == "first_open" })
     }
 
     func testUserEngagementTrackerSetup() {
@@ -367,9 +401,12 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual(appStartTrackerMock.setupWithWasCalled, 1)
     }
 
-    func testAppStartTrackerSetupClosureWasCalled() {
-        // given
+    func testAppStartTrackerSetupClosureAddsEventToCommonBatch() {
+        // given: application_start no longer goes out through a synchronous path with its own
+        // retry logic — it now flows through the regular event pipeline (addEvent), gets persisted,
+        // and is retried by the same batch mechanism as every other event.
         enumerationCounterMock.incrementedCountStub = 0
+        let mirror = Mirror(reflecting: processor)
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: true,
@@ -384,15 +421,93 @@ final class EventsProcessorImplTests: XCTestCase {
         // when
         let input = AppStartTracker.Input(
             name: TestData.appStartEventName,
-            parameters: TestData.appStartEventParameters,
-            completion: { _ in }
+            parameters: TestData.appStartEventParameters
         )
         appStartTrackerMock.setupWithReceivedClosure?(input)
+        sleep(milliseconds: 100)
+        // then: the event went out through the regular path and sits in the shared events array,
+        // rather than having been sent synchronously, bypassing batches
+        XCTAssertEqual(batchProcessorMock.sendEventSyncWasCalled, 0)
+        let appStartEvent = mirror.events.first { $0["name"] as? String == TestData.appStartEventName }
+        XCTAssertNotNil(appStartEvent)
+        XCTAssertEqual(appStartEvent?["data"] as? [String: Double], TestData.appStartEventParameters)
+    }
+
+    // MARK: heartbeat
+
+    func testHeartbeatTrackerStartsOnSetup() {
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
         // then
-        XCTAssertEqual(batchProcessorMock.sendEventSyncWasCalled, 1)
-        let receivedValue = batchProcessorMock.sendEventSyncReceivedValue
-        XCTAssertEqual(receivedValue?.event["name"] as? String, TestData.appStartEventName)
-        XCTAssertEqual(receivedValue?.event["data"] as? [String: Double], TestData.appStartEventParameters)
+        XCTAssertEqual(heartbeatTrackerMock.setupWithWasCalled, 1)
+        XCTAssertEqual(heartbeatTrackerMock.startWasCalled, 1)
+    }
+
+    func testHeartbeatTrackerClosureAddsEvent() {
+        // given
+        enumerationCounterMock.incrementedCountStub = 0
+        let mirror = Mirror(reflecting: processor)
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // when
+        heartbeatTrackerMock.setupWithReceivedClosure?()
+        sleep(milliseconds: 300)
+        // then
+        let heartbeatEvent = mirror.events.first { $0["name"] as? String == "heartbeat" }
+        XCTAssertNotNil(heartbeatEvent)
+        XCTAssertEqual((heartbeatEvent?["data"] as? [String: Any])?.isEmpty, true)
+    }
+
+    func testHeartbeatTrackerStopsOnDidEnterBackground() {
+        // given
+        let processor = EventsProcessorImpl(
+            batchProcessor: batchProcessorMock,
+            logger: loggerMock,
+            analyticsURL: TestData.url,
+            interceptor: requestInterceptorMock,
+            notificationCenter: NotificationCenter.default,
+            timerMaker: timerMakerMock,
+            appStartTracker: appStartTrackerMock,
+            heartbeatTracker: heartbeatTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
+        )
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: nil,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 500)
+        // when
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        sleep(milliseconds: 500)
+        // then
+        XCTAssertEqual(heartbeatTrackerMock.invalidateWasCalled, 1)
+        // and when
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        sleep(milliseconds: 500)
+        // then
+        XCTAssertEqual(heartbeatTrackerMock.startWasCalled, 2)
     }
 
     // MARK: setCommonParameters
@@ -557,15 +672,44 @@ final class EventsProcessorImplTests: XCTestCase {
             userEngagementTracker: userEngagementTrackerMock
         )
         let mirror = Mirror(reflecting: processor)
+        sleep(milliseconds: 1000)
         // when
+        processor.logLaunchURL(TestData.url, referrerURL: nil)
         sleep(milliseconds: 1000)
-        processor.logLaunchURL(TestData.url)
-        sleep(milliseconds: 1000)
-            // then
-        XCTAssertEqual(mirror.events[1]["name"] as? String, "dynamic_link_app_open")
+        // then
+        let event = mirror.events.first { $0["name"] as? String == "dynamic_link_app_open" }
         XCTAssertEqual(
-            (mirror.events[1]["data"] as? [String: String]),
+            event?["data"] as? [String: String],
             ["link": TestData.url.absoluteString]
+        )
+    }
+
+    func testLogLaunchURLWithReferrer() {
+        // given
+        enumerationCounterMock.incrementedCountStub = 0
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: true,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock,
+            userEngagementTracker: userEngagementTrackerMock
+        )
+        let mirror = Mirror(reflecting: processor)
+        sleep(milliseconds: 1000)
+        // when
+        processor.logLaunchURL(TestData.url, referrerURL: TestData.referrerURL)
+        sleep(milliseconds: 1000)
+        // then
+        let event = mirror.events.first { $0["name"] as? String == "dynamic_link_app_open" }
+        XCTAssertEqual(
+            event?["data"] as? [String: String],
+            [
+                "link": TestData.url.absoluteString,
+                "referrerURL": TestData.referrerURL.absoluteString
+            ]
         )
     }
 
@@ -579,7 +723,9 @@ final class EventsProcessorImplTests: XCTestCase {
             interceptor: requestInterceptorMock,
             notificationCenter: NotificationCenter.default,
             timerMaker: timerMakerMock,
-            appStartTracker: appStartTrackerMock
+            appStartTracker: appStartTrackerMock,
+            heartbeatTracker: heartbeatTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
         )
         enumerationCounterMock.incrementedCountStub = 0
         processor.setup(
@@ -610,10 +756,12 @@ final class EventsProcessorImplTests: XCTestCase {
             interceptor: requestInterceptorMock,
             notificationCenter: NotificationCenter.default,
             timerMaker: timerMakerMock,
-            appStartTracker: appStartTrackerMock
+            appStartTracker: appStartTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
         )
         let mirror = Mirror(reflecting: processor)
         enumerationCounterMock.incrementedCountStub = 0
+        firstOpenTrackerMock.shouldTrack = false
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
@@ -652,10 +800,12 @@ final class EventsProcessorImplTests: XCTestCase {
             interceptor: requestInterceptorMock,
             notificationCenter: NotificationCenter.default,
             timerMaker: timerMakerMock,
-            appStartTracker: appStartTrackerMock
+            appStartTracker: appStartTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
         )
         let mirror = Mirror(reflecting: processor)
         enumerationCounterMock.incrementedCountStub = 0
+        firstOpenTrackerMock.shouldTrack = false
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
@@ -827,7 +977,8 @@ final class EventsProcessorImplTests: XCTestCase {
             notificationCenter: notificationCenterMock,
             timerMaker: timerMakerMock,
             sessionValueManager: sessionValueManagerMock,
-            appStartTracker: appStartTrackerMock
+            appStartTracker: appStartTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
         )
         processor.setCustomHeaders(TestData.customHeaders)
         // when
@@ -843,6 +994,98 @@ final class EventsProcessorImplTests: XCTestCase {
         sleep(milliseconds: 100)
         // then the stored headers are re-applied to the freshly created batch sender
         XCTAssertEqual(batchProcessorMock.setCustomHeadersReceivedValue, TestData.customHeaders)
+    }
+
+    // MARK: - first_open ordering integration
+    //
+    // FirstOpenTrackerMock doesn't touch UserDefaults, so it wouldn't catch a regression where
+    // firstOpenTracker.trackIfNeeded and checkOnNewLaunch() get reordered inside setup(). These
+    // tests exercise a real FirstOpenTracker over isolated UserDefaults suites (not .standard) to
+    // verify EventsProcessorImpl.setup()'s end-to-end behavior without a mock in the way.
+
+    func testFirstOpenIntegrationSendsEventForFreshInstall() {
+        // given: a real FirstOpenTracker, no legacy key present — a fresh install
+        FirstOpenTracker.resetLegacyLaunchKeyCacheForTesting()
+        let suiteName = "EventsProcessorImplTests-firstOpen-\(UUID().uuidString)"
+        let legacySuiteName = "EventsProcessorImplTests-legacy-\(UUID().uuidString)"
+        let defaultsSuite = UserDefaults(suiteName: suiteName)!
+        let legacySuite = UserDefaults(suiteName: legacySuiteName)!
+        defer {
+            defaultsSuite.removePersistentDomain(forName: suiteName)
+            legacySuite.removePersistentDomain(forName: legacySuiteName)
+            FirstOpenTracker.resetLegacyLaunchKeyCacheForTesting()
+        }
+        let realFirstOpenTracker = FirstOpenTracker(defaults: defaultsSuite, legacyDefaults: legacySuite)
+        enumerationCounterMock.incrementedCountStub = 0
+        let processor = EventsProcessorImpl(
+            batchProcessor: batchProcessorMock,
+            logger: loggerMock,
+            analyticsURL: TestData.url,
+            interceptor: requestInterceptorMock,
+            notificationCenter: notificationCenterMock,
+            timerMaker: timerMakerMock,
+            sessionValueManager: sessionValueManagerMock,
+            appStartTracker: appStartTrackerMock,
+            heartbeatTracker: heartbeatTrackerMock,
+            firstOpenTracker: realFirstOpenTracker
+        )
+        let mirror = Mirror(reflecting: processor)
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // then
+        XCTAssertNotNil(mirror.events.first { $0["name"] as? String == "first_open" })
+    }
+
+    func testFirstOpenIntegrationIsSuppressedWhenLegacyKeyIsPreset() {
+        // given: the legacy key already exists — the SDK has run on this device before this version
+        FirstOpenTracker.resetLegacyLaunchKeyCacheForTesting()
+        let suiteName = "EventsProcessorImplTests-firstOpen-\(UUID().uuidString)"
+        let legacySuiteName = "EventsProcessorImplTests-legacy-\(UUID().uuidString)"
+        let defaultsSuite = UserDefaults(suiteName: suiteName)!
+        let legacySuite = UserDefaults(suiteName: legacySuiteName)!
+        legacySuite.set(false, forKey: "WildAnalyticsSDK-isNewLaunch")
+        defer {
+            defaultsSuite.removePersistentDomain(forName: suiteName)
+            legacySuite.removePersistentDomain(forName: legacySuiteName)
+            FirstOpenTracker.resetLegacyLaunchKeyCacheForTesting()
+        }
+        let realFirstOpenTracker = FirstOpenTracker(defaults: defaultsSuite, legacyDefaults: legacySuite)
+        enumerationCounterMock.incrementedCountStub = 0
+        let processor = EventsProcessorImpl(
+            batchProcessor: batchProcessorMock,
+            logger: loggerMock,
+            analyticsURL: TestData.url,
+            interceptor: requestInterceptorMock,
+            notificationCenter: notificationCenterMock,
+            timerMaker: timerMakerMock,
+            sessionValueManager: sessionValueManagerMock,
+            appStartTracker: appStartTrackerMock,
+            heartbeatTracker: heartbeatTrackerMock,
+            firstOpenTracker: realFirstOpenTracker
+        )
+        let mirror = Mirror(reflecting: processor)
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // then
+        XCTAssertNil(mirror.events.first { $0["name"] as? String == "first_open" })
     }
 }
 
@@ -864,6 +1107,7 @@ private extension EventsProcessorImplTests {
             scaleFactor: nil
         )
         static let url = URL(string: "https://example.com")!
+        static let referrerURL = URL(string: "https://referrer.example.com")!
         static let event: Event = .init(meta: ["Meta": 123], batchNum: 0, events: [["name":321]])
         static let parameters: [String: Int] = [event2String: 123]
         static let parameters2: [String: Int] = [eventString: 321]

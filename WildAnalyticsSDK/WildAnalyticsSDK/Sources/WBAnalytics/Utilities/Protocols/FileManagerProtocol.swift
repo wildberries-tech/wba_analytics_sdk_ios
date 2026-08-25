@@ -3,84 +3,84 @@
 //
 
 import Foundation
-/// 'Закрывает' FileManager
+/// 'Wraps' FileManager
 public protocol FileManagerProtocol {
-    /// Создаёт файл по указанному пути. Если файл уже есть - перезаписывает
+    /// Creates a file at the given path. If the file already exists, overwrites it.
     ///
     /// - Parameters:
-    ///   - atPath: Путь к файлу для записи
-    ///   - contents: Дата для записи в новый файл
-    ///   - attributes: Атрибуты создаваемого файла.
+    ///   - atPath: Path to the file to write.
+    ///   - contents: Data to write into the new file.
+    ///   - attributes: Attributes of the file being created.
     @discardableResult
     func createFile(atPath: String, contents: Data?, attributes: [FileAttributeKey: Any]?) -> Bool
 
-    /// Создаёт директорию по указанному пути.
+    /// Creates a directory at the given path.
     ///
     /// - Parameters:
-    ///   - atURL: Путь к директории для создания
+    ///   - atURL: Path to the directory to create.
     ///   - createIntermediates: -
-    ///   - attributes: Атрибуты создаваемой директории.
+    ///   - attributes: Attributes of the directory being created.
     func createDirectory(at url: URL, withIntermediateDirectories createIntermediates: Bool, attributes: [FileAttributeKey: Any]?) throws
 
-    /// Читает содержимое файла по указанному пути.
+    /// Reads the contents of the file at the given path.
     ///
-    /// - Parameter path: Путь к файлу для чтения.
-    /// - Returns: Содержимое файла.
-    /// Если в path передана директория, или в процессе чтения возникла ошибка, возвращает nil.
+    /// - Parameter path: Path to the file to read.
+    /// - Returns: The file's contents.
+    /// Returns nil if a directory is passed in path, or if an error occurs while reading.
     func contents(atPath path: String) -> Data?
 
-    /// Возвращает массив адресов для запрошенной директории в выбранном домене.
+    /// Returns an array of URLs for the requested directory in the chosen domain.
     ///
     /// - Parameters:
-    ///   - directory: Директория для поиска
-    ///   - domainMask: Домен файловой системы для поиска директории
+    ///   - directory: The directory to search for.
+    ///   - domainMask: The file system domain to search the directory in.
     func urls(
         for directory: FileManager.SearchPathDirectory,
         in domainMask: FileManager.SearchPathDomainMask
     ) -> [URL]
 
-    /// Возвращает логическое значение, указывающее, существует ли файл или каталог по указанному пути.
+    /// Returns a boolean value indicating whether a file or directory exists at the given path.
     ///
-    /// - parameter path: Путь к файлу или каталогу. Если путь начинается с ~,
-    /// его сначала нужно развернуть с помощью expandingTildeInPath;
-    /// в противном случае этот метод возвращает false.
-    /// - returns: true, если файл по указанному пути существует, или значение false,
-    /// если файл не существует или его существование не может быть определено.
+    /// - parameter path: Path to the file or directory. If the path starts with ~,
+    /// it must first be expanded using expandingTildeInPath;
+    /// otherwise this method returns false.
+    /// - returns: true if a file exists at the given path, or false
+    /// if the file doesn't exist or its existence can't be determined.
     func fileExists(atPath path: String) -> Bool
 
-    /// Удаляет файл или каталог по указанному пути.
+    /// Removes the file or directory at the given path.
     ///
-    /// - parameter path: Путь до файла или каталога для удаления.
-    /// - returns: true, если элемент был успешно удален. Возвращает false, если произошла ошибка.
+    /// - parameter path: Path to the file or directory to remove.
+    /// - returns: true if the item was removed successfully. Returns false if an error occurred.
     func removeItem(atPath path: String) throws
 
-    /// Удаляет файл или каталог по указанному пути.
+    /// Removes the file or directory at the given path.
     ///
-    /// - parameter path: Путь до файла или каталога для удаления.
-    /// - returns: true, если элемент был успешно удален. Возвращает false, если произошла ошибка.
+    /// - parameter path: Path to the file or directory to remove.
+    /// - returns: true if the item was removed successfully. Returns false if an error occurred.
     func removeItem(at path: URL) throws
 
-    /// Перемещает файл или каталог по указанному пути
+    /// Moves the file or directory at the given path.
     /// - Parameters:
-    ///   - srcURL: Изначальный путь до файлы или каталога
-    ///   - dstURL: Конечный путь до файлы или каталога
+    ///   - srcURL: Source path of the file or directory.
+    ///   - dstURL: Destination path of the file or directory.
     func moveItem(at srcURL: URL, to dstURL: URL) throws
 
-    /// Копирует файл или каталог по указанному пути.
+    /// Copies the file or directory at the given path.
     ///
     /// - Parameters:
-    ///   - srcURL: Изначальный путь до файла или каталога
-    ///   - dstURL: Конечный путь до файла или каталога
+    ///   - srcURL: Source path of the file or directory.
+    ///   - dstURL: Destination path of the file or directory.
     func copyItem(at srcURL: URL, to dstURL: URL) throws
 
-    /// Возвращает URL для указанного каталога в указанной области поиска.
+    /// Returns the URL for the given directory in the given search scope.
     ///
     /// - Parameters:
-    ///   - directory: Каталог для поиска
-    ///   - domain: Область поиска
-    ///   - url: Относительный путь для поиска
-    ///   - shouldCreate: Флаг, указывающий, нужно ли создавать каталог, если он не существует
-    /// - Returns: URL для указанного каталога
+    ///   - directory: The directory to search for.
+    ///   - domain: The search scope.
+    ///   - url: The relative path to search for.
+    ///   - shouldCreate: Flag indicating whether to create the directory if it doesn't exist.
+    /// - Returns: The URL for the given directory.
     func url(
         for directory: FileManager.SearchPathDirectory,
         in domain: FileManager.SearchPathDomainMask,
@@ -88,10 +88,10 @@ public protocol FileManagerProtocol {
         create shouldCreate: Bool
     ) throws -> URL
 
-    /// Возвращает атрибуты файла или каталога по указанному пути.
+    /// Returns the attributes of the file or directory at the given path.
     ///
-    /// - parameter path: Путь до файла или каталога
-    /// - returns: Словарь атрибутов файла или каталога
+    /// - parameter path: Path to the file or directory.
+    /// - returns: A dictionary of the file's or directory's attributes.
     func attributesOfItem(atPath path: String) throws -> [FileAttributeKey : Any]
 }
 

@@ -191,7 +191,7 @@ final class BatchProcessorImplTests: XCTestCase {
         let completion: (_ successfully: Bool) -> Void  = { result in
             completionReceivedArgument = result
             completionWasCalled += 1
-            print("Все")
+            print("Done")
         }
         // when
         batchProcessor.sendEventSync(event: TestData.event, completion: completion)

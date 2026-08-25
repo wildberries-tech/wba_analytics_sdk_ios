@@ -301,17 +301,17 @@ final class BatchProcessorImpl: BatchProcessor {
 }
 
 extension BatchProcessorImpl {
-    /// Состояние обработки пакета (Batch) для управления логикой отправки данных.
+    /// The batch processing state, used to control the data-sending logic.
     ///
-    /// Это перечисление отслеживает состояние обработки пакетов и управляет повторной отправкой в случае неуспешной попытки.
+    /// This enum tracks the state of batch processing and manages retrying after a failed attempt.
     ///
     /// - `needRetain(BatchModel)`:
-    ///   Указывает на необходимость удерживать пакет для повторной отправки.
-    ///   Активируется при неуспешной отправке, передавая объект `BatchModel` с информацией о пакете.
+    ///   Indicates that the batch needs to be retained for a retry.
+    ///   Activated on a failed send, carrying a `BatchModel` object with the batch's information.
     ///
     /// - `normal`:
-    ///   Указывает на нормальное состояние, когда нет необходимости удерживать пакет для повторной отправки.
-    ///   Используется, если последняя отправка прошла успешно или нет ожидающих пакетов.
+    ///   Indicates the normal state, where there's no need to retain a batch for a retry.
+    ///   Used when the last send succeeded or there are no pending batches.
     ///
     enum BatchProcessingState {
         case needRetain(BatchModel)

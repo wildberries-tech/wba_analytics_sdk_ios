@@ -6,6 +6,10 @@
 - Публичные типы переименованы: `WBMNetworkType` → `WildNetworkType`, `WBAnalyticsReceiver` → `WildAnalyticsReceiver`, `WBAnalyticsDelegateProtocol` → `WildAnalyticsDelegateProtocol`, `WBTracker` → `WildTracker`.
 - Изменился runtime-идентификатор ресивера: `ru.wildberries.receiver_wbanalyticsreceiver` → `ru.wildberries.receiver_wildanalyticsreceiver` (если строка хардкодилась — заменить).
 - Гайд по миграции: [docs/MigrationGuide_4.0.0.md](docs/MigrationGuide_4.0.0.md).
+- Событие `heartbeat`: отправляется каждые 30 секунд, пока приложение на переднем плане
+- Событие `first_open` больше не зависит от клиентского флага `isFirstLaunch`
+- Событие `application_start`: исправлена доставка, убран дубль на холодном старте, добавлен параметр `processor_name`
+- Событие `dynamic_link_app_open`: добавлен параметр `referrerURL` и публичный метод `trackLaunchURL`
 
 ## [v3.4.4](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/tags/3.4.4)
 

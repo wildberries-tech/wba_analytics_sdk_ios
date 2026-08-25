@@ -88,10 +88,12 @@ final class EventsProcessorMock: EventsProcessor {
 
     private(set) var logLaunchURLWasCalled: Int = 0
     private(set) var logLaunchURLReceivedURL: URL?
+    private(set) var logLaunchURLReceivedReferrerURL: URL?
 
-    func logLaunchURL(_ url: URL) {
+    func logLaunchURL(_ url: URL, referrerURL: URL?) {
         logLaunchURLWasCalled += 1
         logLaunchURLReceivedURL = url
+        logLaunchURLReceivedReferrerURL = referrerURL
     }
 
     private(set) var logEventWasCalled: Int = 0

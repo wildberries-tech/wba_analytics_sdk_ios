@@ -34,6 +34,7 @@ final class EventTests: XCTestCase {
         XCTAssertEqual(Name.userEngagement, "user_engagement")
         XCTAssertEqual(Name.firstOpen, "first_open")
         XCTAssertEqual(Name.openAppWithLink, "dynamic_link_app_open")
+        XCTAssertEqual(Name.heartbeat, "heartbeat")
     }
 }
 

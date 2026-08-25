@@ -132,6 +132,71 @@ final class WildAnalyticsSDKTests: XCTestCase {
         )
     }
 
+    // MARK: trackLaunchURL
+
+    func testTrackLaunchURLBroadcastsToAllReceivers() {
+        // given
+        let receiverMock = AnalyticsReceiverMock()
+        receiverMock.identifierStub = "receiver"
+        let analytics = WildAnalyticsSDK()
+        analytics.registerReceiver(receiverMock)
+        let url = URL(string: "https://example.com")!
+        let referrerURL = URL(string: "https://referrer.example.com")!
+        // when
+        analytics.trackLaunchURL(url, referrerURL: referrerURL)
+        // then
+        XCTAssertEqual(receiverMock.trackLaunchURLWasCalled, 1)
+        XCTAssertEqual(receiverMock.trackLaunchURLReceivedURL, url)
+        XCTAssertEqual(receiverMock.trackLaunchURLReceivedReferrerURL, referrerURL)
+    }
+
+    func testTrackLaunchURLSendsToSpecificReceiver() {
+        // given
+        let receiverMock = AnalyticsReceiverMock()
+        receiverMock.identifierStub = TestData.receiverIdentifier
+        let otherReceiverMock = AnalyticsReceiverMock()
+        otherReceiverMock.identifierStub = "otherReceiverIdentifier"
+        let analytics = WildAnalyticsSDK()
+        analytics.registerReceiver(receiverMock)
+        analytics.registerReceiver(otherReceiverMock)
+        let url = URL(string: "https://example.com")!
+        let referrerURL = URL(string: "https://referrer.example.com")!
+        // when
+        analytics.trackLaunchURL(
+            url,
+            referrerURL: referrerURL,
+            receiverIdentifier: TestData.receiverIdentifier
+        )
+        // then
+        XCTAssertEqual(receiverMock.trackLaunchURLWasCalled, 1)
+        XCTAssertEqual(receiverMock.trackLaunchURLReceivedURL, url)
+        XCTAssertEqual(receiverMock.trackLaunchURLReceivedReferrerURL, referrerURL)
+        XCTAssertEqual(otherReceiverMock.trackLaunchURLWasCalled, 0)
+    }
+
+    /// Regression test for protocol dispatch: `AnalyticsReceiver.trackLaunchURL(_:)` — the
+    /// convenience single-parameter method from the extension — must call the protocol requirement
+    /// `trackLaunchURL(_:referrerURL:)`, which the concrete receiver overrides, rather than the empty
+    /// default implementation from that same extension. If someone ever "simplifies" the two extension
+    /// methods back into one with `referrerURL: URL? = nil`, a call through the protocol
+    /// (existential) type would statically resolve to that empty default — silently dropping the
+    /// attribution event — and without this test the regression would go unnoticed
+    /// (testTrackLaunchURLBroadcastsToAllReceivers doesn't catch it, since it always calls the
+    /// two-argument form directly).
+    func testTrackLaunchURLConvenienceOverloadDispatchesToReceiverOverride() {
+        // given
+        let receiverMock = AnalyticsReceiverMock()
+        receiverMock.identifierStub = TestData.receiverIdentifier
+        let receiver: AnalyticsReceiver = receiverMock
+        let url = URL(string: "https://example.com")!
+        // when: the single-parameter convenience method, called through the protocol type
+        receiver.trackLaunchURL(url)
+        // then: this must reach the concrete receiver's override, not the empty extension default
+        XCTAssertEqual(receiverMock.trackLaunchURLWasCalled, 1)
+        XCTAssertEqual(receiverMock.trackLaunchURLReceivedURL, url)
+        XCTAssertNil(receiverMock.trackLaunchURLReceivedReferrerURL)
+    }
+
     // MARK: trackUserEngagement
 
     func testTrackUserEngagement() {

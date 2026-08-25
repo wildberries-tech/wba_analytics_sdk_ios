@@ -20,20 +20,20 @@ final class StorageImplTests: XCTestCase {
         coreDataStackMock = .init()
         loggerMock = .init()
 
-        // Устанавливаем контекст в мок
+        // Set the context on the mock
         let container = NSPersistentContainer(name: "BatchEntityModel", managedObjectModel: CoreDataStack.managedObjectModel)
-        // Настройка in-memory хранилища
+        // Configure the in-memory store
         let description = NSPersistentStoreDescription()
         description.type = NSInMemoryStoreType
         container.persistentStoreDescriptions = [description]
 
-        // Загружаем persistent stores
+        // Load the persistent stores
         container.loadPersistentStores { (_, error) in
             if let error = error {
-                fatalError("Не удалось загрузить хранилище: \(error)")
+                fatalError("Failed to load the store: \(error)")
             }
         }
-        // Устанавливаем мок
+        // Set the mock
         coreDataStackMock.containerGetStub = container
 
         storage = StorageImpl(
@@ -62,13 +62,13 @@ final class StorageImplTests: XCTestCase {
         // then
         XCTAssertEqual(coreDataStackMock.contextGetWasCalled, 4, "Context was not obtained")
 
-        // Проверяем наличие записи в контексте
+        // Check that a record exists in the context
         let fetchRequest: NSFetchRequest<BatchEntity> = BatchEntity.fetchRequest()
         let fetchedEntities = try coreDataStackMock.context.fetch(fetchRequest)
 
-        // Проверяем, что была добавлена одна запись
+        // Check that exactly one record was added
         XCTAssertEqual(fetchedEntities.count, 1, "Record was not added.")
-        // Проверяем содержание добавленной записи
+        // Check the content of the added record
         let fetchedEntity = try XCTUnwrap(fetchedEntities.first)
         XCTAssertNotNil(fetchedEntity)
         XCTAssertEqual(fetchedEntity.data, TestData.batchString)
@@ -87,10 +87,10 @@ final class StorageImplTests: XCTestCase {
         } catch {
             switch String(describing: error) {
                case let str where str.contains("invalidJSON"):
-                   // Ошибка нужного типа
+                   // Error of the expected type
                    break
                default:
-                   XCTFail("Ожидалась ошибка invalidJSON, а получена \(error)")
+                   XCTFail("Expected an invalidJSON error, got \(error)")
                }
         }
 
@@ -127,7 +127,7 @@ final class StorageImplTests: XCTestCase {
             XCTFail("Error remove batch: \(error)")
         }
         // then
-        // Проверяем наличие записи в контексте
+        // Check that a record exists in the context
         let fetchRequest: NSFetchRequest<BatchEntity> = BatchEntity.fetchRequest()
         let fetchedEntities = try coreDataStackMock.context.fetch(fetchRequest)
         XCTAssertEqual(fetchedEntities.count, 0, "Record was not added.")

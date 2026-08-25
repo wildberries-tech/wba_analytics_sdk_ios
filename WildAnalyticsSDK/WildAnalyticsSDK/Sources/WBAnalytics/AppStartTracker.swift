@@ -8,30 +8,53 @@ protocol AppStartTrackerProtocol {
     func setup(with closure: @escaping AppStartTracker.TrackEventClosure)
 }
 
+/// Source of the application state. UIApplication.shared may only be accessed from the main
+/// thread, so the value is captured once — when AppStartTracker is created, on the caller's thread.
+/// This assumes the SDK is initialized from the main thread, in application(_:didFinishLaunchingWithOptions:).
+protocol ApplicationStateProviding {
+    var applicationState: UIApplication.State { get }
+}
+
+struct SystemApplicationStateProvider: ApplicationStateProviding {
+    var applicationState: UIApplication.State {
+        UIApplication.shared.applicationState
+    }
+}
+
 final class AppStartTracker {
     typealias TrackEventClosure = (AppStartTracker.Input) -> Void
 
     // MARK: - Properties
 
-    private static var hasInitialized = false
-
     private let notificationCenter: NotificationCenter
     private let dispatcher: Dispatcher
 
     private var trackEventClosure: TrackEventClosure?
-    private var startLocation: StartLocation = .unknown
-    private var attemptsCount = 0
+    // Captured synchronously in init, not in trackLaunchIfNeeded: AppStartTracker is created on
+    // the caller's thread inside WBAnalytics.setup(...) (typically main, during didFinishLaunching),
+    // i.e. before EventsProcessorImpl hops onto its own queue and the app has a chance to become
+    // .active. Reading the state later (after that queue hop) almost always yields .active -> unknown
+    // instead of the correct foreground for a normal cold start.
+    private var startLocation: StartLocation
+    private var hasTrackedLaunch = false
+    private var wasInBackground = false
 
     // MARK: - Init
 
     init(
         notificationCenter: NotificationCenter = .default,
-        dispatcher: Dispatcher = DispatchQueue.main
+        dispatcher: Dispatcher = DispatchQueue.main,
+        applicationStateProvider: ApplicationStateProviding = SystemApplicationStateProvider()
     ) {
         self.notificationCenter = notificationCenter
         self.dispatcher = dispatcher
+        // .active means the SDK was initialized after app launch, not during it,
+        // so the launch source can't be determined
+        self.startLocation = applicationStateProvider.applicationState == .active
+            ? .unknown
+            : .foreground
 
-        subscribeForNotificationsIfNeeded()
+        subscribeForNotifications()
     }
 
     // MARK: - Deinit
@@ -44,8 +67,12 @@ final class AppStartTracker {
 // MARK: - AppStartTrackerProtocol
 
 extension AppStartTracker: AppStartTrackerProtocol {
+    /// Called from EventsProcessorImpl.setup, i.e. at app launch.
+    /// The event is sent from here rather than from didFinishLaunchingNotification: by this point
+    /// the send closure is already set, so the event isn't lost.
     func setup(with closure: @escaping TrackEventClosure) {
         trackEventClosure = closure
+        trackLaunchIfNeeded()
     }
 }
 
@@ -55,7 +82,6 @@ extension AppStartTracker {
     struct Input {
         let name: String
         let parameters: [String: Any]?
-        let completion: (Bool) -> Void
     }
 }
 
@@ -76,24 +102,12 @@ private extension AppStartTracker {
         static let startLocation = "start_location"
         static let cpu = "cpu"
         static let ram = "ram"
+        static let processorName = "processor_name"
     }
 }
 
 private extension AppStartTracker {
-    func subscribeForNotificationsIfNeeded() {
-        guard !Self.hasInitialized else { return }
-        Self.hasInitialized.toggle()
-        subscribeForNotifications()
-    }
-
     func subscribeForNotifications() {
-        notificationCenter.addObserver(
-            self,
-            selector: #selector(didFinishLaunching),
-            name: UIApplication.didFinishLaunchingNotification,
-            object: nil
-        )
-
         notificationCenter.addObserver(
             self,
             selector: #selector(willEnterForeground),
@@ -109,53 +123,44 @@ private extension AppStartTracker {
         )
     }
 
-    @objc func didFinishLaunching() {
-        startLocation = .foreground
-        trackEvent()
+    func trackLaunchIfNeeded() {
+        guard !hasTrackedLaunch else { return }
+        hasTrackedLaunch = true
+
+        dispatcher.async { [weak self] in
+            self?.trackEvent()
+        }
     }
 
     @objc func willEnterForeground() {
+        // Skip the first foreground of a cold start: the event was already sent from setup
+        guard wasInBackground else { return }
+        wasInBackground = false
         startLocation = .background
-        // Задержка добавлена из-за того, что willEnterForeground у AppStartTracker вызывается раньше, чем у SessionValueManager,
-        // что приводит к старому значению sessionValue у события application_start после открытия приложения из фона
-        dispatcher.asyncAfter(deadline: Constants.trackDeadline, qos: .unspecified, flags: []) { [weak self] in
+
+        // The delay exists because AppStartTracker's willEnterForeground fires before
+        // SessionValueManager's, which would otherwise attach a stale sessionValue to application_start
+        dispatcher.asyncAfter(deadline: .now() + Constants.trackDelay, qos: .unspecified, flags: []) { [weak self] in
             self?.trackEvent()
         }
     }
 
     @objc func didEnterBackground() {
-        attemptsCount = 0
+        wasInBackground = true
     }
 
     func trackEvent() {
+        let version = Version(modelID: DeviceInfo.modelID)
         let parameters: [String: Any]? = [
-            Parameter.cpu: Version(modelID: DeviceInfo.modelID).frequency,
+            Parameter.cpu: version.frequency,
             Parameter.ram: Int(round(Double(ProcessInfo.processInfo.physicalMemory) / Constants.bytesInGb)),
-            Parameter.startLocation: startLocation.rawValue
+            Parameter.startLocation: startLocation.rawValue,
+            Parameter.processorName: version.cpu.name
         ]
 
-        let input = Input(
-            name: Event.appStart,
-            parameters: parameters,
-            completion: handleTrackEvent(_:)
-        )
+        let input = Input(name: Event.appStart, parameters: parameters)
 
         trackEventClosure?(input)
-    }
-
-    func handleTrackEvent(_ isSuccess: Bool) {
-        guard !isSuccess else {
-            attemptsCount = 0
-            return
-        }
-
-        guard attemptsCount < Constants.attemptsLimit else { return }
-
-        attemptsCount += 1
-
-        dispatcher.asyncAfter(deadline: Constants.retryDeadline, qos: .unspecified, flags: []) { [weak self] in
-            self?.trackEvent()
-        }
     }
 }
 
@@ -163,9 +168,7 @@ private extension AppStartTracker {
 
 private extension AppStartTracker {
     enum Constants {
-        static let attemptsLimit = 3
-        static let trackDeadline: DispatchTime = .now() + .milliseconds(500)
-        static let retryDeadline: DispatchTime = .now() + .seconds(1)
+        static let trackDelay: DispatchTimeInterval = .milliseconds(500)
         static let bytesInGb = 1024.0 * 1024.0 * 1024.0
     }
 }

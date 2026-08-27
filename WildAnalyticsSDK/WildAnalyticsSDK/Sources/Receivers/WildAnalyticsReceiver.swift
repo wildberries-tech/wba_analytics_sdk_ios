@@ -12,6 +12,7 @@ public final class WildAnalyticsReceiver {
     private let interceptor: RequestInterceptor
     private let isFirstLaunch: Bool
     private let enableAttributionTracking: Bool
+    private let enableAutomaticEvents: Bool
     private let loggingOptions: LoggingOptions
     private let networkTypeProvider: NetworkTypeProviderProtocol
     private let batchConfig: BatchConfig
@@ -28,6 +29,9 @@ public final class WildAnalyticsReceiver {
     ///   - isFirstLaunch: Deprecated. No longer affects the first_open event — the SDK determines
     ///     the first launch on its own. The value is only used to delay reading the IDFA on first launch.
     ///   - enableAttributionTracking - Enable WB Tracker
+    ///   - enableAutomaticEvents: Enables the automatic events of the SDK (`first_open`,
+    ///     `application_start`, `heartbeat`). Enabled by default. If your product is an SDK embedded
+    ///     into another product, pass `false`. Does not affect `user_engagement`.
     ///   - loggingOptions: Structure that holds the logging configurations.
     ///   - networkTypeProvider: Object that returns the current network status.
     ///   - batchConfig: Configuration of batch sending parameters.
@@ -39,6 +43,7 @@ public final class WildAnalyticsReceiver {
         inteceptor: RequestInterceptor = NoOpInterceptor(),
         isFirstLaunch: Bool,
         enableAttributionTracking: Bool = true,
+        enableAutomaticEvents: Bool = true,
         loggingOptions: LoggingOptions,
         networkTypeProvider: NetworkTypeProviderProtocol,
         batchConfig: BatchConfig,
@@ -51,6 +56,7 @@ public final class WildAnalyticsReceiver {
         self.interceptor = inteceptor
         self.isFirstLaunch = isFirstLaunch
         self.enableAttributionTracking = enableAttributionTracking
+        self.enableAutomaticEvents = enableAutomaticEvents
         self.loggingOptions = loggingOptions
         self.networkTypeProvider = networkTypeProvider
         self.batchConfig = batchConfig
@@ -80,6 +86,7 @@ extension WildAnalyticsReceiver: AnalyticsReceiver {
             apiKey: apiKey,
             isFirstLaunch: isFirstLaunch,
             enableAttributionTracking: enableAttributionTracking,
+            enableAutomaticEvents: enableAutomaticEvents,
             dropCache: false,
             networkTypeProvider: networkTypeProvider,
             batchConfig: batchConfig,

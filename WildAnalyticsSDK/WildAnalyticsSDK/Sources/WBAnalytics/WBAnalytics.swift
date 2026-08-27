@@ -79,6 +79,7 @@ public class WBAnalytics {
         apiKey: String,
         isFirstLaunch: Bool,
         enableAttributionTracking: Bool,
+        enableAutomaticEvents: Bool = true,
         dropCache: Bool,
         networkTypeProvider: NetworkTypeProviderProtocol,
         queue: DispatchQueue? = nil,
@@ -100,6 +101,7 @@ public class WBAnalytics {
         analytics.processor.setup(
             apiKey: apiKey,
             isFirstLaunch: isFirstLaunch,
+            enableAutomaticEvents: enableAutomaticEvents,
             dropCache: dropCache,
             queue: queue,
             batchConfig: batchConfig,

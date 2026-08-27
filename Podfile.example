@@ -9,12 +9,12 @@ use_modular_headers!
 
 target 'YourAppTarget' do
   # WildAnalyticsSDK - Full library
-  pod 'WildAnalyticsSDK', '~> 4.0.2'
+  pod 'WildAnalyticsSDK', '~> 4.0.3'
 
   target 'YourAppTargetTests' do
     inherit! :search_paths
     # Pods for testing
-    pod 'WildAnalyticsSDK/Tests', '~> 4.0.2'
+    pod 'WildAnalyticsSDK/Tests', '~> 4.0.3'
   end
 
   target 'YourAppTargetUITests' do

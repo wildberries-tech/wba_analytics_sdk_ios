@@ -6,18 +6,18 @@ import XCTest
 
 @testable import WildAnalyticsSDK
 
-final class HeartbeatTrackerTests: XCTestCase {
+final class PeriodicTrackerTests: XCTestCase {
 
     private var timerMock: TimerMock!
     private var timerMaker: TimerMock.Type!
-    private var subject: HeartbeatTracker!
+    private var subject: PeriodicTracker!
 
     override func setUp() {
         super.setUp()
         timerMock = .init()
         timerMaker = TimerMock.self
         timerMaker.timerStub = timerMock
-        subject = HeartbeatTracker(timerMaker: timerMaker)
+        subject = PeriodicTracker(interval: TestData.interval, timerMaker: timerMaker)
     }
 
     override func tearDown() {
@@ -25,15 +25,37 @@ final class HeartbeatTrackerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testStartCreatesRepeatingTimerWithThirtySecondsInterval() {
+    // MARK: init
+
+    func testDefaultInitUsesSystemTimer() {
+        // when
+        let subject = PeriodicTracker(interval: TestData.interval)
+        let mirror = Mirror(reflecting: subject)
+        // then
+        XCTAssertIdentical(mirror.timerMaker, Timer.self)
+        XCTAssertEqual(mirror.interval, TestData.interval)
+    }
+
+    // MARK: start
+
+    func testStartCreatesRepeatingTimerWithGivenInterval() {
         // when
         subject.start()
         // then
         XCTAssertEqual(timerMaker.timerWasCalled, 1)
-        XCTAssertEqual(timerMaker.timerReceivedArguments?.timeInterval, 30.0)
+        XCTAssertEqual(timerMaker.timerReceivedArguments?.timeInterval, TestData.interval)
         XCTAssertEqual(timerMaker.timerReceivedArguments?.repeats, true)
         XCTAssertEqual(timerMock.scheduleWasCalled, 1)
         XCTAssertEqual(timerMock.scheduleReceivedArguments, .main)
+    }
+
+    func testStartUsesIntervalItWasCreatedWith() {
+        // given
+        let subject = PeriodicTracker(interval: TestData.otherInterval, timerMaker: timerMaker)
+        // when
+        subject.start()
+        // then
+        XCTAssertEqual(timerMaker.timerReceivedArguments?.timeInterval, TestData.otherInterval)
     }
 
     func testTimerFireCallsSetupClosure() {
@@ -65,6 +87,8 @@ final class HeartbeatTrackerTests: XCTestCase {
         XCTAssertEqual(timerMaker.timerWasCalled, 2)
     }
 
+    // MARK: invalidate
+
     func testInvalidateStopsTimer() {
         // given
         subject.start()
@@ -83,13 +107,36 @@ final class HeartbeatTrackerTests: XCTestCase {
     }
 
     func testInvalidateClearsTimerEvenWhenAlreadyInvalid() {
-        // given: the timer already became invalid on its own (e.g. cancelled externally)
+        // given: the timer already became invalid on its own (e.g. cancelled from the outside)
         subject.start()
         timerMock.isValid = false
         // when
         subject.invalidate()
-        // then: state no longer keeps a dangling reference to an invalid timer
+        // then: the state no longer keeps a dangling reference to an invalid timer
         XCTAssertNil(subject.timer)
         XCTAssertEqual(timerMock.invalidateWasCalled, 0)
+    }
+}
+
+// MARK: - TestData
+
+private extension PeriodicTrackerTests {
+    enum TestData {
+        static let interval = 30.0
+        static let otherInterval = 5.0
+    }
+}
+
+// MARK: - Mirror
+
+private extension PeriodicTrackerTests {
+
+    final class Mirror: MirrorObject {
+        init(reflecting tracker: PeriodicTracker) {
+            super.init(reflecting: tracker)
+        }
+
+        var timerMaker: TimerProtocol.Type? { extract() }
+        var interval: TimeInterval? { extract() }
     }
 }

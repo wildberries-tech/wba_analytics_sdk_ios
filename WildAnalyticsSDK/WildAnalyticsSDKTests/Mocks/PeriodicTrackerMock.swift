@@ -6,7 +6,7 @@ import Foundation
 
 @testable import WildAnalyticsSDK
 
-final class HeartbeatTrackerMock: HeartbeatTrackerProtocol {
+final class PeriodicTrackerMock: PeriodicTrackerProtocol {
 
     private(set) var setupWithReceivedClosure: (() -> Void)?
     private(set) var setupWithWasCalled: Int = 0

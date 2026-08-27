@@ -8,6 +8,8 @@ protocol EventsProcessor {
     ///   - apiKey: Auth key for endpoint.
     ///   - isFirstLaunch: Deprecated. No longer affects the first_open event — the SDK determines
     ///     the first launch on its own. The value is only used to delay reading the IDFA on first launch.
+    ///   - enableAutomaticEvents: Enables the automatic events of the SDK (`first_open`,
+    ///     `application_start`, `heartbeat`). Enabled by default. `user_engagement` is not affected.
     ///   - dropCache: Delete cached events
     ///   - queue: Queue for processing batches
     ///   - batchConfig: Configuration of batch sending parameters.
@@ -18,6 +20,7 @@ protocol EventsProcessor {
     func setup(
         apiKey: String,
         isFirstLaunch: Bool,
+        enableAutomaticEvents: Bool,
         dropCache: Bool,
         queue: DispatchQueue?,
         batchConfig: BatchConfig,
@@ -72,6 +75,7 @@ final class EventsProcessorImpl: EventsProcessor {
         static let analyticsQueueName = "WBAnalytics"
         static let newLaunchKey = "WildAnalyticsSDK-isNewLaunch"
         static let maxBatchSizeInBytes: Int = 512 * 1024
+        static let heartbeatInterval = 30.0
     }
 
     private let logger: Logger
@@ -87,8 +91,9 @@ final class EventsProcessorImpl: EventsProcessor {
     private let timerMaker: TimerProtocol.Type
     private let sessionValueManager: SessionValueManagerProtocol
     private let appStartTracker: AppStartTrackerProtocol
-    private let heartbeatTracker: HeartbeatTrackerProtocol
+    private let heartbeatTracker: PeriodicTrackerProtocol
     private let firstOpenTracker: FirstOpenTrackerProtocol
+    private var enableAutomaticEvents = true
 
     private var events = [Event]()
     private var commonParameters = [String: Any]()
@@ -108,7 +113,7 @@ final class EventsProcessorImpl: EventsProcessor {
         timerMaker: TimerProtocol.Type = Timer.self,
         sessionValueManager: SessionValueManagerProtocol = SessionValueManager.shared,
         appStartTracker: AppStartTrackerProtocol,
-        heartbeatTracker: HeartbeatTrackerProtocol = HeartbeatTracker(),
+        heartbeatTracker: PeriodicTrackerProtocol = PeriodicTracker(interval: Constants.heartbeatInterval),
         firstOpenTracker: FirstOpenTrackerProtocol = FirstOpenTracker(),
         queue: DispatchQueue = DispatchQueue(
             label: Constants.analyticsQueueName,
@@ -131,6 +136,7 @@ final class EventsProcessorImpl: EventsProcessor {
     func setup(
         apiKey: String,
         isFirstLaunch: Bool,
+        enableAutomaticEvents: Bool = true,
         dropCache: Bool,
         queue: DispatchQueue? = nil,
         batchConfig: BatchConfig,
@@ -143,6 +149,7 @@ final class EventsProcessorImpl: EventsProcessor {
         logger.debug(Constants.logLabel, "---------------------")
 
         self.batchConfig = batchConfig
+        self.enableAutomaticEvents = enableAutomaticEvents
         self.counter = enumerationCounter
         self.userEngagementTracker = userEngagementTracker ?? UserEngagementTracker(delegate: self)
         if let queue {
@@ -194,16 +201,20 @@ final class EventsProcessorImpl: EventsProcessor {
             // it's created in EventsProcessorImpl.init, rather than reading UserDefaults here — so
             // the call order relative to checkOnNewLaunch() below (which creates that key) no longer
             // affects the result of trackIfNeeded
-            self.firstOpenTracker.trackIfNeeded(apiKey: apiKey) { [weak self] in
-                self?.addEvent(Event.Name.firstOpen)
+            if enableAutomaticEvents {
+                self.firstOpenTracker.trackIfNeeded(apiKey: apiKey) { [weak self] in
+                    self?.addEvent(Event.Name.firstOpen)
+                }
             }
             self.checkOnNewLaunch()
 
             self.userEngagementTracker.start()
-            self.heartbeatTracker.setup { [weak self] in
-                self?.addEvent(Event.Name.heartbeat)
+            if enableAutomaticEvents {
+                self.heartbeatTracker.setup { [weak self] in
+                    self?.addEvent(Event.Name.heartbeat)
+                }
+                self.heartbeatTracker.start()
             }
-            self.heartbeatTracker.start()
             self.startSendEventsTimer()
             if idfaDelay > 0 {
                 self.queue.asyncAfter(deadline: .now() + idfaDelay) { [weak idfaProvider] in
@@ -214,8 +225,10 @@ final class EventsProcessorImpl: EventsProcessor {
             // in CoreData, and retried by the shared batch pipeline — the tracker no longer has its
             // own retry logic, which avoids duplicate events on a flaky network (see BatchProcessor's
             // retry state machine).
-            self.appStartTracker.setup { [weak self] input in
-                self?.addEvent(input.name, parameters: input.parameters)
+            if enableAutomaticEvents {
+                self.appStartTracker.setup { [weak self] input in
+                    self?.addEvent(input.name, parameters: input.parameters)
+                }
             }
         }
     }
@@ -302,11 +315,18 @@ final class EventsProcessorImpl: EventsProcessor {
 
     // MARK: - Private
 
+    /// Starts the heartbeat timer only if automatic events are enabled in the configuration.
+    /// The paired `invalidate()` stays unconditional: it is a no-op on a timer that was never started.
+    private func startHeartbeatIfNeeded() {
+        guard enableAutomaticEvents else { return }
+        heartbeatTracker.start()
+    }
+
     @objc private func willEnterForeground() {
         async { [weak self] in
             guard let self else { return }
             self.userEngagementTracker.start()
-            self.heartbeatTracker.start()
+            self.startHeartbeatIfNeeded()
             self.startSendEventsTimer()
             self.logger.debug(Constants.logLabel, "willEnterForeground")
         }

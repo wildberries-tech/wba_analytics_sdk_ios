@@ -25,7 +25,7 @@ final class EventsProcessorImplTests: XCTestCase {
     private var requestInterceptorMock: RequestInterceptorMock!
     private var sessionValueManagerMock: SessionValueManagerMock!
     private var appStartTrackerMock: AppStartTrackerMock!
-    private var heartbeatTrackerMock: HeartbeatTrackerMock!
+    private var heartbeatTrackerMock: PeriodicTrackerMock!
     private var firstOpenTrackerMock: FirstOpenTrackerMock!
 
     override func setUp() {
@@ -508,6 +508,133 @@ final class EventsProcessorImplTests: XCTestCase {
         sleep(milliseconds: 500)
         // then
         XCTAssertEqual(heartbeatTrackerMock.startWasCalled, 2)
+    }
+
+    // MARK: automatic events
+
+    func testAutomaticEventsDisabledDoesNotStartHeartbeat() {
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            enableAutomaticEvents: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // then
+        XCTAssertEqual(heartbeatTrackerMock.setupWithWasCalled, 0)
+        XCTAssertEqual(heartbeatTrackerMock.startWasCalled, 0)
+    }
+
+    func testAutomaticEventsDisabledDoesNotSendFirstOpen() {
+        // given
+        enumerationCounterMock.incrementedCountStub = 0
+        let mirror = Mirror(reflecting: processor)
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            enableAutomaticEvents: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // then: the tracker is not called at all — otherwise it would mark first_open as sent
+        // and the event would be lost forever once automatic events are enabled again
+        XCTAssertEqual(firstOpenTrackerMock.trackIfNeededWasCalled, 0)
+        XCTAssertNil(mirror.events.first { $0["name"] as? String == "first_open" })
+    }
+
+    func testAutomaticEventsDisabledDoesNotSetupAppStartTracker() {
+        // given
+        enumerationCounterMock.incrementedCountStub = 0
+        let mirror = Mirror(reflecting: processor)
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: true,
+            enableAutomaticEvents: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock,
+            userEngagementTracker: userEngagementTrackerMock
+        )
+        sleep(milliseconds: 300)
+        // then
+        XCTAssertEqual(appStartTrackerMock.setupWithWasCalled, 0)
+        XCTAssertNil(mirror.events.first { $0["name"] as? String == TestData.appStartEventName })
+    }
+
+    func testAutomaticEventsDisabledDoesNotStartHeartbeatOnWillEnterForeground() {
+        // given
+        let processor = EventsProcessorImpl(
+            batchProcessor: batchProcessorMock,
+            logger: loggerMock,
+            analyticsURL: TestData.url,
+            interceptor: requestInterceptorMock,
+            notificationCenter: NotificationCenter.default,
+            timerMaker: timerMakerMock,
+            appStartTracker: appStartTrackerMock,
+            heartbeatTracker: heartbeatTrackerMock,
+            firstOpenTracker: firstOpenTrackerMock
+        )
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            enableAutomaticEvents: false,
+            dropCache: false,
+            queue: nil,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 500)
+        // when
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        sleep(milliseconds: 500)
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        sleep(milliseconds: 500)
+        // then
+        XCTAssertEqual(heartbeatTrackerMock.startWasCalled, 0)
+    }
+
+    func testAutomaticEventsDisabledKeepsUserEngagementTracking() {
+        // given: user_engagement is not covered by the flag — the timer still starts
+        // and the collected event reaches the batch as usual
+        enumerationCounterMock.incrementedCountStub = 0
+        let mirror = Mirror(reflecting: processor)
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: true,
+            enableAutomaticEvents: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock,
+            userEngagementTracker: userEngagementTrackerMock
+        )
+        sleep(milliseconds: 300)
+        // when
+        processor.didUserEngagementTrackerFire(TestData.userEngagement)
+        sleep(milliseconds: 300)
+        // then
+        XCTAssertEqual(userEngagementTrackerMock.startWasCalled, 1)
+        let engagementEvent = mirror.events.first { $0["name"] as? String == "user_engagement" }
+        XCTAssertNotNil(engagementEvent)
+        XCTAssertEqual(
+            (engagementEvent?["data"] as? [String: Any])?["screen_name"] as? String,
+            TestData.eventString
+        )
     }
 
     // MARK: setCommonParameters

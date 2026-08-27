@@ -18,6 +18,7 @@ To create a WildAnalyticsReceiver instance, you need to pass several mandatory p
     
 - **environment:** Application environment, can be .production or .test, if needed you can set your own apiKey .custom("apiKey"). ([example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL to which analytics data will be sent.
+- **enableAutomaticEvents:** Sending of the SDK automatic events. Optional, `true` by default. Turns off sending of the automatic events: if your project is an SDK integrated into another product, set `enableAutomaticEvents: false`. [Details](#-system-events)
 - **isFirstLaunch:** Flag indicating whether the current app launch is the first one. (stored somewhere in your code, for example in UserDefaults [example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
 - **loggingOptions:** Logging settings, including logging level and file writing. [Details](.Docs/LoggingOptions.md)
 - **networkTypeProvider:** Object providing information about the current network type.
@@ -176,12 +177,21 @@ analyticsService.checkAttribution { result in
 ### Sent automatically by the SDK
 
 Fully initialized by the SDK — no client-side configuration is required.
+All events below are controlled by a single `enableAutomaticEvents` flag (`true` by default).
 
 | Event | Trigger | Parameters |
 |---|---|---|
 | `heartbeat` | first send 30 seconds after the app is opened, then every 30 seconds while the app is in the foreground | none |
 | `first_open` | the first time the app is opened on the user's device, separately for each apiKey | none |
 | `application_start` | app launch or return from background | see the table below |
+
+> ⚠️ **If your project is an SDK integrated into another product, set `enableAutomaticEvents: false`.**
+> The SDK then stops sending every automatic event from the table above. These events describe the
+> application lifecycle, which an embedded SDK does not control: inside someone else's app they
+> describe nobody's session and only double the event traffic of the host.
+
+The flag does not affect `user_engagement`, explicitly called events (`trackEvent`, `trackLaunchURL`)
+or batch sending — they behave the same regardless of its value.
 
 `application_start` parameters:
 

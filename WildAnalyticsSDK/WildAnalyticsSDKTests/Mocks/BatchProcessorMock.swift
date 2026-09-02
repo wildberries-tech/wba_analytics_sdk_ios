@@ -30,14 +30,18 @@ final class BatchProcessorMock: BatchProcessor {
     )?
     private(set) var setupWasCalled: Int = 0
 
+    private(set) var setupReceivedEnableAutomaticEvents: Bool?
+
     func setup(
         batchSender: BatchSender,
         queue: Dispatcher?,
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
         batchWorker: BatchWorker,
-        idfaProvider: IDFAProvider
+        idfaProvider: IDFAProvider,
+        enableAutomaticEvents: Bool
     ) {
+        setupReceivedEnableAutomaticEvents = enableAutomaticEvents
         setupReceivedArguments = (
             batchSender,
             queue,

@@ -7,7 +7,8 @@
 - Изменился runtime-идентификатор ресивера: `ru.wildberries.receiver_wbanalyticsreceiver` → `ru.wildberries.receiver_wildanalyticsreceiver` (если строка хардкодилась — заменить).
 - Гайд по миграции: [docs/MigrationGuide_4.0.0.md](docs/MigrationGuide_4.0.0.md).
 - Событие `heartbeat`: отправляется каждые 30 секунд, пока приложение на переднем плане
-- Новый параметр `enableAutomaticEvents` в инициализаторе `WildAnalyticsReceiver` (по умолчанию `true`) отключает отправку всех автоматических событий SDK: `first_open`, `application_start` и `heartbeat`. Если ваш проект — SDK, который интегрируется в другой продукт, нужно поставить `enableAutomaticEvents: false`. На `user_engagement` и на события с явным вызовом флаг не влияет
+- Новый параметр `enableAutomaticEvents` в инициализаторе `WildAnalyticsReceiver` управляет отправкой всех автоматических событий SDK: `first_open`, `application_start` и `heartbeat`. **По умолчанию `false` — автоматические события не отправляются**; чтобы включить их, укажите `true`. Если ваш продукт будет интегрироваться в другой продукт, оставьте положение флага неизменным: при изменении у интегрируемых продуктов сбор аналитики может работать нестабильно. На `user_engagement` и на события с явным вызовом флаг не влияет
+- В `meta` каждого батча добавлен ключ `enable_automatic_events` (`true` / `false`) — значение флага у интегратора
 - Гайд по миграции на 4.0.3: [docs/MigrationGuide_4.0.3.md](docs/MigrationGuide_4.0.3.md).
 - Событие `first_open` больше не зависит от клиентского флага `isFirstLaunch`
 - Событие `application_start`: исправлена доставка, убран дубль на холодном старте, добавлен параметр `processor_name`

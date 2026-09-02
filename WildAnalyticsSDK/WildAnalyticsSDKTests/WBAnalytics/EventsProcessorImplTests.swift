@@ -98,6 +98,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
+            enableAutomaticEvents: true,
             dropCache: false,
             batchConfig: batchConfig,
             networkTypeProvider: networkMock
@@ -303,6 +304,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,
@@ -328,6 +330,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: true,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,
@@ -389,6 +392,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: true,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,
@@ -410,6 +414,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: true,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,
@@ -440,6 +445,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,
@@ -459,6 +465,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,
@@ -491,6 +498,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: nil,
             batchConfig: batchConfig,
@@ -511,6 +519,39 @@ final class EventsProcessorImplTests: XCTestCase {
     }
 
     // MARK: automatic events
+
+    func testAutomaticEventsFlagIsForwardedToBatchProcessorForMeta() {
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            enableAutomaticEvents: true,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // then: the value ends up in the meta of every batch under the enable_automatic_events key
+        XCTAssertEqual(batchProcessorMock.setupReceivedEnableAutomaticEvents, true)
+    }
+
+    func testAutomaticEventsDisabledFlagIsForwardedToBatchProcessorForMeta() {
+        // when
+        processor.setup(
+            apiKey: TestData.apiKey,
+            isFirstLaunch: false,
+            dropCache: false,
+            queue: queueMock,
+            batchConfig: batchConfig,
+            networkTypeProvider: networkMock,
+            enumerationCounter: enumerationCounterMock
+        )
+        sleep(milliseconds: 300)
+        // then: the default is disabled, and that must reach the meta as well
+        XCTAssertEqual(batchProcessorMock.setupReceivedEnableAutomaticEvents, false)
+    }
 
     func testAutomaticEventsDisabledDoesNotStartHeartbeat() {
         // when
@@ -709,10 +750,14 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.addEvent(TestData.eventString, parameters: TestData.parameters)
         sleep(milliseconds: 100)
         // then
-        XCTAssertEqual(mirror.events[1]["event_num"] as? Int, 0)
-        XCTAssertEqual(mirror.events[1]["name"] as? String, "event")
-        XCTAssertEqual(mirror.events[1]["session_value"] as? String, TestData.sessionValue)
-        XCTAssertEqual((mirror.events[1]["data"] as? [String: Int]), TestData.parametersFull)
+        // Look the event up by name, not by index: which automatic events are present
+        // depends on enableAutomaticEvents and must not affect this test
+        let event = mirror.events.first { $0["name"] as? String == TestData.eventString }
+        XCTAssertNotNil(event)
+        XCTAssertEqual(event?["event_num"] as? Int, 0)
+        XCTAssertEqual(event?["name"] as? String, "event")
+        XCTAssertEqual(event?["session_value"] as? String, TestData.sessionValue)
+        XCTAssertEqual((event?["data"] as? [String: Int]), TestData.parametersFull)
     }
 
     // MARK: - MakeBatch
@@ -983,12 +1028,16 @@ final class EventsProcessorImplTests: XCTestCase {
         let time = Date(timeIntervalSince1970:Date().timeIntervalSince1970).asString
         sleep(milliseconds: 500)
         // then
-        XCTAssertEqual(mirror.events[1]["event_num"] as? Int, 0)
-        XCTAssertEqual(mirror.events[1]["name"] as? String, "user_engagement")
-        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
-        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["text_size"] as? Int, 2)
-        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["auth_type"] as? String, "noAuth")
-        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["scale_factor"] as? String, "scaleFactor")
+        // Look the event up by name, not by index: which automatic events are present
+        // depends on enableAutomaticEvents and must not affect this test
+        let event = mirror.events.first { $0["name"] as? String == "user_engagement" }
+        XCTAssertNotNil(event)
+        XCTAssertEqual(event?["event_num"] as? Int, 0)
+        XCTAssertEqual(event?["name"] as? String, "user_engagement")
+        XCTAssertEqual((event?["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
+        XCTAssertEqual((event?["data"] as? [String: Any])?["text_size"] as? Int, 2)
+        XCTAssertEqual((event?["data"] as? [String: Any])?["auth_type"] as? String, "noAuth")
+        XCTAssertEqual((event?["data"] as? [String: Any])?["scale_factor"] as? String, "scaleFactor")
     }
 
     func testDidUserEngagementTrackerFireWithoutScaleFactor() {
@@ -1010,9 +1059,13 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.didUserEngagementTrackerFire(TestData.userEngagementWithoutScaleFactor)
         sleep(milliseconds: 500)
         // then the key is omitted rather than sent as null
-        XCTAssertEqual(mirror.events[1]["name"] as? String, "user_engagement")
-        XCTAssertEqual((mirror.events[1]["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
-        XCTAssertNil((mirror.events[1]["data"] as? [String: Any])?["scale_factor"])
+        // Look the event up by name, not by index: which automatic events are present
+        // depends on enableAutomaticEvents and must not affect this test
+        let event = mirror.events.first { $0["name"] as? String == "user_engagement" }
+        XCTAssertNotNil(event)
+        XCTAssertEqual(event?["name"] as? String, "user_engagement")
+        XCTAssertEqual((event?["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
+        XCTAssertNil((event?["data"] as? [String: Any])?["scale_factor"])
     }
 
     // MARK: setDeviceId
@@ -1161,6 +1214,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,
@@ -1204,6 +1258,7 @@ final class EventsProcessorImplTests: XCTestCase {
         processor.setup(
             apiKey: TestData.apiKey,
             isFirstLaunch: false,
+            enableAutomaticEvents: true,
             dropCache: false,
             queue: queueMock,
             batchConfig: batchConfig,

@@ -79,7 +79,7 @@ public class WBAnalytics {
         apiKey: String,
         isFirstLaunch: Bool,
         enableAttributionTracking: Bool,
-        enableAutomaticEvents: Bool = true,
+        enableAutomaticEvents: Bool = false,
         dropCache: Bool,
         networkTypeProvider: NetworkTypeProviderProtocol,
         queue: DispatchQueue? = nil,

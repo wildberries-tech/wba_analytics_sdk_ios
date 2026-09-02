@@ -30,8 +30,9 @@ public final class WildAnalyticsReceiver {
     ///     the first launch on its own. The value is only used to delay reading the IDFA on first launch.
     ///   - enableAttributionTracking - Enable WB Tracker
     ///   - enableAutomaticEvents: Enables the automatic events of the SDK (`first_open`,
-    ///     `application_start`, `heartbeat`). Enabled by default. If your product is an SDK embedded
-    ///     into another product, pass `false`. Does not affect `user_engagement`.
+    ///     `application_start`, `heartbeat`). Disabled by default — pass `true` to make the SDK send them.
+    ///     If your product is integrated into another product, keep the default value.
+    ///     Does not affect `user_engagement`.
     ///   - loggingOptions: Structure that holds the logging configurations.
     ///   - networkTypeProvider: Object that returns the current network status.
     ///   - batchConfig: Configuration of batch sending parameters.
@@ -43,7 +44,7 @@ public final class WildAnalyticsReceiver {
         inteceptor: RequestInterceptor = NoOpInterceptor(),
         isFirstLaunch: Bool,
         enableAttributionTracking: Bool = true,
-        enableAutomaticEvents: Bool = true,
+        enableAutomaticEvents: Bool = false,
         loggingOptions: LoggingOptions,
         networkTypeProvider: NetworkTypeProviderProtocol,
         batchConfig: BatchConfig,

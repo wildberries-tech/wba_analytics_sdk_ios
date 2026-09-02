@@ -8,6 +8,19 @@ import XCTest
 
 final class MetaTests: XCTestCase {
 
+    func testInitCarriesDisabledAutomaticEventsFlag() {
+        // when
+        let meta = Meta(
+            networkType: TestData.networkType,
+            deviceId: TestData.deviceID,
+            idfa: TestData.idfa,
+            isNewUser: TestData.isNewUser,
+            enableAutomaticEvents: false
+        )
+        // then
+        XCTAssertEqual(meta["enable_automatic_events"] as? Bool, false)
+    }
+
     func testInit() {
         // given
         let timeZoneOffsetSeconds = TimeZone.current.secondsFromGMT()
@@ -21,6 +34,7 @@ final class MetaTests: XCTestCase {
             deviceId: TestData.deviceID,
             idfa: TestData.idfa,
             isNewUser: TestData.isNewUser,
+            enableAutomaticEvents: true,
             localDate: date
         )
         // then
@@ -94,6 +108,10 @@ final class MetaTests: XCTestCase {
         XCTAssertEqual(
             meta["resolution_height"] as? CGFloat,
             UIScreen.main.bounds.size.height * UIScreen.main.scale
+        )
+        XCTAssertEqual(
+            meta["enable_automatic_events"] as? Bool,
+            true
         )
         XCTAssertEqual(
             meta["device_ad_id"] as? String,

@@ -14,12 +14,15 @@ extension Meta {
     ///   - deviceId: The unique device identifier.
     ///   - idfa: The unique advertising identifier.
     ///   - isNewUser: A boolean indicating whether the user is new.
+    ///   - enableAutomaticEvents: Whether the SDK sends its automatic events (`first_open`,
+    ///     `application_start`, `heartbeat`) for this integrator.
     ///   - localDate: meta event time
     init(
         networkType: WildNetworkType,
         deviceId: String,
         idfa: String,
         isNewUser: Bool,
+        enableAutomaticEvents: Bool,
         localDate: Date = Date()
     ) {
         let locale = Locale.current.languageCode ?? ""
@@ -57,7 +60,8 @@ extension Meta {
             "mobile_device_type": getDeviceType(),
             "is_new_user": isNewUser,
             "timezone": timeZoneIdentifier,
-            "device_ad_id": idfa
+            "device_ad_id": idfa,
+            "enable_automatic_events": enableAutomaticEvents
         ]
     }
 }

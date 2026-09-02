@@ -9,7 +9,8 @@ protocol EventsProcessor {
     ///   - isFirstLaunch: Deprecated. No longer affects the first_open event — the SDK determines
     ///     the first launch on its own. The value is only used to delay reading the IDFA on first launch.
     ///   - enableAutomaticEvents: Enables the automatic events of the SDK (`first_open`,
-    ///     `application_start`, `heartbeat`). Enabled by default. `user_engagement` is not affected.
+    ///     `application_start`, `heartbeat`). Disabled by default. `user_engagement` is not affected.
+    ///     The value is sent in the `meta` of every batch under the `enable_automatic_events` key.
     ///   - dropCache: Delete cached events
     ///   - queue: Queue for processing batches
     ///   - batchConfig: Configuration of batch sending parameters.
@@ -93,7 +94,7 @@ final class EventsProcessorImpl: EventsProcessor {
     private let appStartTracker: AppStartTrackerProtocol
     private let heartbeatTracker: PeriodicTrackerProtocol
     private let firstOpenTracker: FirstOpenTrackerProtocol
-    private var enableAutomaticEvents = true
+    private var enableAutomaticEvents = false
 
     private var events = [Event]()
     private var commonParameters = [String: Any]()
@@ -136,7 +137,7 @@ final class EventsProcessorImpl: EventsProcessor {
     func setup(
         apiKey: String,
         isFirstLaunch: Bool,
-        enableAutomaticEvents: Bool = true,
+        enableAutomaticEvents: Bool = false,
         dropCache: Bool,
         queue: DispatchQueue? = nil,
         batchConfig: BatchConfig,
@@ -190,7 +191,8 @@ final class EventsProcessorImpl: EventsProcessor {
                     queue: self.queue,
                     batchConfig: batchConfig
                 ),
-                idfaProvider: idfaProvider
+                idfaProvider: idfaProvider,
+                enableAutomaticEvents: enableAutomaticEvents
             )
             let storedHeaders = self.customHeadersQueue.sync { self._customHeaders }
             if !storedHeaders.isEmpty {

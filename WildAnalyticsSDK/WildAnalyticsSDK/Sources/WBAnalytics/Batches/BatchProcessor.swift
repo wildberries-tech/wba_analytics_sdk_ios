@@ -10,7 +10,8 @@ protocol BatchProcessor {
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
         batchWorker: BatchWorker,
-        idfaProvider: IDFAProvider
+        idfaProvider: IDFAProvider,
+        enableAutomaticEvents: Bool
     )
     func launch()
     func update(isNewLaunch: Bool)
@@ -39,6 +40,7 @@ final class BatchProcessorImpl: BatchProcessor {
     // default value
     private var batches: [BatchModel] = []
     private var isNewLaunch = false
+    private var enableAutomaticEvents = false
     private var state: BatchProcessingState = .normal
 
     private var batchesFromStorage: [BatchModel] = []
@@ -71,7 +73,8 @@ final class BatchProcessorImpl: BatchProcessor {
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
         batchWorker: BatchWorker,
-        idfaProvider: IDFAProvider = SystemIDFAProvider(isDisabled: false)
+        idfaProvider: IDFAProvider = SystemIDFAProvider(isDisabled: false),
+        enableAutomaticEvents: Bool = false
     ) {
         self.batchSender = batchSender
         self.queue = queue
@@ -79,6 +82,7 @@ final class BatchProcessorImpl: BatchProcessor {
         self.counter = counter
         self.batchWorker = batchWorker
         self.idfaProvider = idfaProvider
+        self.enableAutomaticEvents = enableAutomaticEvents
         self.batchesFromStorage = userDefaultsStorage?.loadBatches() ?? []
         DeviceMemoryState.setState(.normal)
         batches = []
@@ -282,7 +286,8 @@ final class BatchProcessorImpl: BatchProcessor {
             networkType: networkType,
             deviceId: deviceId ?? WBAnalytics.deviceId,
             idfa: idfaProvider.currentIDFA(),
-            isNewUser: isNewLaunch
+            isNewUser: isNewLaunch,
+            enableAutomaticEvents: enableAutomaticEvents
         )
     }
 

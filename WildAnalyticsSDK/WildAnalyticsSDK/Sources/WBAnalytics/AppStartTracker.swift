@@ -152,7 +152,7 @@ private extension AppStartTracker {
     func trackEvent() {
         let version = Version(modelID: DeviceInfo.modelID)
         let parameters: [String: Any]? = [
-            Parameter.cpu: version.frequency,
+            Parameter.cpu: Self.roundedFrequency(version.frequency),
             Parameter.ram: Int(round(Double(ProcessInfo.processInfo.physicalMemory) / Constants.bytesInGb)),
             Parameter.startLocation: startLocation.rawValue,
             Parameter.processorName: version.cpu.name
@@ -170,5 +170,18 @@ private extension AppStartTracker {
     enum Constants {
         static let trackDelay: DispatchTimeInterval = .milliseconds(500)
         static let bytesInGb = 1024.0 * 1024.0 * 1024.0
+        static let frequencyFractionScale = 100.0
+    }
+}
+
+// MARK: - Frequency rounding
+
+extension AppStartTracker {
+    /// The clock frequency is sent in the event rounded to hundredths: in the frequency table
+    /// some of the older processors have three decimal places, while the event schema expects two.
+    /// Not private so that the rule can be covered by a test on specific values — the frequency
+    /// of the device a test run happens on does not necessarily have three decimals
+    static func roundedFrequency(_ frequency: Double) -> Double {
+        (frequency * Constants.frequencyFractionScale).rounded() / Constants.frequencyFractionScale
     }
 }

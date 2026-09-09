@@ -155,6 +155,42 @@ final class AppStartTrackerTests: XCTestCase {
         )
     }
 
+    func testCPUFrequencyIsRoundedToTwoDecimals() throws {
+        // when
+        setupSubject()
+        dispatcherMock.asyncReceivedWork?()
+        // then: in the frequency table some processors have three decimal places (0.533, 0.412),
+        // the value must leave the SDK with two. We check the invariant rather than a specific
+        // number: it depends on the processor of the machine the tests run on
+        let cpu = try XCTUnwrap(trackedInputs.first?.parameters?["cpu"] as? Double)
+        let scaledToHundredths = cpu * 100
+        XCTAssertEqual(scaledToHundredths, scaledToHundredths.rounded(), accuracy: 1e-6)
+    }
+
+    func testCPUFrequencyMatchesRoundedTableValueForCurrentDevice() {
+        // when
+        setupSubject()
+        dispatcherMock.asyncReceivedWork?()
+        // then: the tracker reports the rounded value, not the raw one from the table
+        let expected = AppStartTracker.roundedFrequency(Version(modelID: DeviceInfo.modelID).frequency)
+        XCTAssertEqual(trackedInputs.first?.parameters?["cpu"] as? Double, expected)
+    }
+
+    func testRoundedFrequencyCutsThirdDecimal() {
+        // then: values from the frequency table that have three decimal places
+        XCTAssertEqual(AppStartTracker.roundedFrequency(0.533), 0.53)
+        XCTAssertEqual(AppStartTracker.roundedFrequency(0.412), 0.41)
+        XCTAssertEqual(AppStartTracker.roundedFrequency(0.600), 0.6)
+    }
+
+    func testRoundedFrequencyKeepsValuesThatAlreadyFit() {
+        // then: values with two decimals or fewer must stay untouched
+        XCTAssertEqual(AppStartTracker.roundedFrequency(4.26), 4.26)
+        XCTAssertEqual(AppStartTracker.roundedFrequency(2.65), 2.65)
+        XCTAssertEqual(AppStartTracker.roundedFrequency(3.1), 3.1)
+        XCTAssertEqual(AppStartTracker.roundedFrequency(1), 1)
+    }
+
     func testSecondSetupDoesNotTrackLaunchAgain() {
         // given
         setupSubject()

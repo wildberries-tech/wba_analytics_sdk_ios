@@ -152,11 +152,11 @@ public final class AnalyticsLogViewController: UIViewController {
 
         #elseif os(tvOS)
         let alert = UIAlertController(
-            title: "Недоступно",
-            message: "Общий доступ к логам не поддерживается на tvOS.",
+            title: "Unavailable",
+            message: "Sharing logs is not supported on tvOS.",
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "ОК", style: .default, handler: nil))
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
 
         #endif

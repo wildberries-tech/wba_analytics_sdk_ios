@@ -7,8 +7,8 @@ import CoreData
 
 @testable import WildAnalyticsSDK
 
-/// Проверяет, что хранилище, созданное предыдущей версией SDK, читается текущей версией
-/// без model migration после отказа от `@objc(BatchEntity)`.
+/// Verifies that a store created by a previous version of the SDK can be read by the
+/// current version without a model migration after dropping `@objc(BatchEntity)`.
 final class BatchEntityStoreCompatibilityTests: XCTestCase {
 
     private var storeURL: URL!
@@ -28,8 +28,8 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Модель в том виде, в котором её строила предыдущая версия SDK: имя класса —
-    /// захардкоженная строка без префикса модуля.
+    /// The model exactly as the previous version of the SDK built it: the class name is
+    /// a hardcoded string with no module prefix.
     private func legacyModel() -> NSManagedObjectModel {
         makeModel(entityName: "BatchEntity", managedObjectClassName: "BatchEntity")
     }
@@ -62,11 +62,11 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
         return model
     }
 
-    /// Префикс в *имени сущности* делает хранилище предыдущей версии нечитаемым: имя
-    /// сущности участвует в метаданных хранилища и в version hash.
-    /// Поэтому изоляцию копий SDK нельзя строить на `entity.name`.
+    /// A prefix in the *entity name* makes the previous version's store unreadable: the
+    /// entity name is part of the store metadata and the version hash.
+    /// That's why isolation between SDK copies can't be built on `entity.name`.
     func testPrefixInEntityNameBreaksExistingStore() throws {
-        // given: хранилище, записанное текущей схемой (сущность называется "BatchEntity")
+        // given: a store written with the current schema (entity named "BatchEntity")
         let writer = NSPersistentStoreCoordinator(managedObjectModel: legacyModel())
         let store = try writer.addPersistentStore(
             ofType: NSSQLiteStoreType,
@@ -76,14 +76,14 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
         )
         try writer.remove(store)
 
-        // when: модель, где к имени сущности добавлен префикс
+        // when: a model with a prefix added to the entity name
         let prefixed = makeModel(
             entityName: "HostApp_BatchEntity",
             managedObjectClassName: NSStringFromClass(BatchEntity.self)
         )
         let reader = NSPersistentStoreCoordinator(managedObjectModel: prefixed)
 
-        // then: Core Data отказывается открыть хранилище
+        // then: Core Data refuses to open the store
         XCTAssertThrowsError(
             try reader.addPersistentStore(
                 ofType: NSSQLiteStoreType,
@@ -91,7 +91,7 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
                 at: storeURL,
                 options: nil
             ),
-            "переименование сущности должно ломать совместимость хранилища"
+            "renaming the entity should break store compatibility"
         ) { error in
             XCTAssertEqual(
                 (error as NSError).code,
@@ -100,8 +100,9 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
         }
     }
 
-    /// Имя сущности живёт внутри своей модели, а не в глобальном пространстве процесса:
-    /// две копии SDK могут одновременно держать сущность "BatchEntity" без конфликта.
+    /// The entity name lives inside its own model rather than in a global process-wide
+    /// namespace: two copies of the SDK can simultaneously hold a "BatchEntity" entity
+    /// without conflict.
     func testTwoModelsCanShareEntityNameSimultaneously() throws {
         let first = NSPersistentStoreCoordinator(managedObjectModel: legacyModel())
         let second = NSPersistentStoreCoordinator(managedObjectModel: makeModel(
@@ -116,9 +117,9 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
         XCTAssertNotNil(second.managedObjectModel.entitiesByName["BatchEntity"])
     }
 
-    /// Version hash считается по имени сущности и её атрибутам, но не по имени класса.
-    /// Совпадение хэшей означает, что Core Data считает хранилище совместимым и migration
-    /// не потребуется.
+    /// The version hash is computed from the entity name and its attributes, but not from
+    /// the class name. Matching hashes mean Core Data considers the store compatible and
+    /// no migration will be required.
     func testVersionHashesAreUnchanged() {
         XCTAssertEqual(
             legacyModel().entityVersionHashesByName,
@@ -126,9 +127,9 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
         )
     }
 
-    /// Сквозная проверка апгрейда: пишем хранилище старой моделью, читаем новой.
+    /// End-to-end upgrade check: write the store with the old model, read it with the new one.
     func testStoreWrittenByPreviousVersionIsReadable() throws {
-        // given: хранилище на диске, созданное предыдущей версией SDK
+        // given: a store on disk, created by a previous version of the SDK
         let legacyCoordinator = NSPersistentStoreCoordinator(managedObjectModel: legacyModel())
         let legacyStore = try legacyCoordinator.addPersistentStore(
             ofType: NSSQLiteStoreType,
@@ -160,10 +161,10 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
             throw saveError
         }
 
-        // Полностью отпускаем файл, чтобы новая версия открыла его с нуля
+        // Fully release the file so the new version opens it from scratch
         try legacyCoordinator.remove(legacyStore)
 
-        // when: то же хранилище открывает текущая версия
+        // when: the current version opens the same store
         let container = NSPersistentContainer(
             name: "BatchEntityModel",
             managedObjectModel: CoreDataStack.managedObjectModel
@@ -175,10 +176,10 @@ final class BatchEntityStoreCompatibilityTests: XCTestCase {
 
         var loadError: Error?
         container.loadPersistentStores { loadError = $1 }
-        XCTAssertNil(loadError, "хранилище предыдущей версии должно открываться без ошибок")
+        XCTAssertNil(loadError, "a store from a previous version should open without errors")
 
-        // then: строка читается и приводится к BatchEntity текущего модуля
-        // (именно этот мост NSArray -> [BatchEntity] падал при конфликте имён классов)
+        // then: the row is read back and cast to this module's BatchEntity
+        // (this exact NSArray -> [BatchEntity] bridge is what crashed on class name conflicts)
         let request: NSFetchRequest<BatchEntity> = BatchEntity.fetchRequest()
         let batches = try container.viewContext.fetch(request)
 

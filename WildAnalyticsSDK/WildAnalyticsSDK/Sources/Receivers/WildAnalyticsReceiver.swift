@@ -12,6 +12,7 @@ public final class WildAnalyticsReceiver {
     private let interceptor: RequestInterceptor
     private let isFirstLaunch: Bool
     private let enableAttributionTracking: Bool
+    private let enableAutomaticEvents: Bool
     private let loggingOptions: LoggingOptions
     private let networkTypeProvider: NetworkTypeProviderProtocol
     private let batchConfig: BatchConfig
@@ -25,11 +26,16 @@ public final class WildAnalyticsReceiver {
     /// - Parameters:
     ///   - environment: Applicaton environment: production or debug.
     ///   - analyticsURL: URL for sending analytics.
-    ///   - isFirstLaunch: First launch option affects sending first run event
+    ///   - isFirstLaunch: Deprecated. No longer affects the first_open event — the SDK determines
+    ///     the first launch on its own. The value is only used to delay reading the IDFA on first launch.
     ///   - enableAttributionTracking - Enable WB Tracker
+    ///   - enableAutomaticEvents: Enables the automatic events of the SDK (`first_open`,
+    ///     `application_start`, `heartbeat`). Disabled by default — pass `true` to make the SDK send them.
+    ///     If your product is integrated into another product, keep the default value.
+    ///     Does not affect `user_engagement`.
     ///   - loggingOptions: Structure that holds the logging configurations.
     ///   - networkTypeProvider: Object that returns the current network status.
-    ///   - batchConfig: Сonfiguration of batch sending parameters.
+    ///   - batchConfig: Configuration of batch sending parameters.
     ///   - idfaConfig: Configuration of the advertising identifier (IDFA) collection.
     ///   - sessionDelegate: Custom URLSessionDelegate for handling authentication challenges (e.g. SSL pinning) of the batch sending session.
     public init(
@@ -38,6 +44,7 @@ public final class WildAnalyticsReceiver {
         inteceptor: RequestInterceptor = NoOpInterceptor(),
         isFirstLaunch: Bool,
         enableAttributionTracking: Bool = true,
+        enableAutomaticEvents: Bool = false,
         loggingOptions: LoggingOptions,
         networkTypeProvider: NetworkTypeProviderProtocol,
         batchConfig: BatchConfig,
@@ -50,6 +57,7 @@ public final class WildAnalyticsReceiver {
         self.interceptor = inteceptor
         self.isFirstLaunch = isFirstLaunch
         self.enableAttributionTracking = enableAttributionTracking
+        self.enableAutomaticEvents = enableAutomaticEvents
         self.loggingOptions = loggingOptions
         self.networkTypeProvider = networkTypeProvider
         self.batchConfig = batchConfig
@@ -79,6 +87,7 @@ extension WildAnalyticsReceiver: AnalyticsReceiver {
             apiKey: apiKey,
             isFirstLaunch: isFirstLaunch,
             enableAttributionTracking: enableAttributionTracking,
+            enableAutomaticEvents: enableAutomaticEvents,
             dropCache: false,
             networkTypeProvider: networkTypeProvider,
             batchConfig: batchConfig,
@@ -132,6 +141,11 @@ extension WildAnalyticsReceiver: AnalyticsReceiver {
     /// Logs a screen viewed with the provided name.
     public func trackUserEngagement(_ userEngagement: UserEngagement) {
         analyticsInstance?.logUserEngagement(userEngagement)
+    }
+
+    /// Logs the URL the app was opened with.
+    public func trackLaunchURL(_ url: URL, referrerURL: URL?) {
+        analyticsInstance?.logLaunchURL(url, referrerURL: referrerURL)
     }
 }
 

@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Сonfiguration of batch sending parameters
+/// Configuration of batch sending parameters
 public struct BatchConfig: Decodable, Equatable {
 
     /// Delay before sending batch

@@ -23,6 +23,7 @@ final class EventsProcessorMock: EventsProcessor {
     private(set) var setupWasCalled: Int = 0
     private(set) var setupReceivedApiKey: String?
     private(set) var setupReceivedIsFirstLaunch: Bool?
+    private(set) var setupReceivedEnableAutomaticEvents: Bool?
     private(set) var setupReceivedDropCache: Bool?
     private(set) var setupReceivedQueue: DispatchQueue?
     private(set) var setupReceivedBatchConfig: BatchConfig?
@@ -37,6 +38,7 @@ final class EventsProcessorMock: EventsProcessor {
     func setup(
         apiKey: String,
         isFirstLaunch: Bool,
+        enableAutomaticEvents: Bool,
         dropCache: Bool,
         queue: DispatchQueue?,
         batchConfig: BatchConfig,
@@ -49,6 +51,7 @@ final class EventsProcessorMock: EventsProcessor {
         setupWasCalled += 1
         setupReceivedApiKey = apiKey
         setupReceivedIsFirstLaunch = isFirstLaunch
+        setupReceivedEnableAutomaticEvents = enableAutomaticEvents
         setupReceivedDropCache = dropCache
         setupReceivedQueue = queue
         setupReceivedBatchConfig = batchConfig
@@ -88,10 +91,12 @@ final class EventsProcessorMock: EventsProcessor {
 
     private(set) var logLaunchURLWasCalled: Int = 0
     private(set) var logLaunchURLReceivedURL: URL?
+    private(set) var logLaunchURLReceivedReferrerURL: URL?
 
-    func logLaunchURL(_ url: URL) {
+    func logLaunchURL(_ url: URL, referrerURL: URL?) {
         logLaunchURLWasCalled += 1
         logLaunchURLReceivedURL = url
+        logLaunchURLReceivedReferrerURL = referrerURL
     }
 
     private(set) var logEventWasCalled: Int = 0

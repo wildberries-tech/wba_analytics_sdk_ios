@@ -20,20 +20,20 @@ final class StorageImplTests: XCTestCase {
         coreDataStackMock = .init()
         loggerMock = .init()
 
-        // Устанавливаем контекст в мок
+        // Set the context on the mock
         let container = NSPersistentContainer(name: "BatchEntityModel", managedObjectModel: CoreDataStack.managedObjectModel)
-        // Настройка in-memory хранилища
+        // Configure the in-memory store
         let description = NSPersistentStoreDescription()
         description.type = NSInMemoryStoreType
         container.persistentStoreDescriptions = [description]
 
-        // Загружаем persistent stores
+        // Load the persistent stores
         container.loadPersistentStores { (_, error) in
             if let error = error {
-                fatalError("Не удалось загрузить хранилище: \(error)")
+                fatalError("Failed to load the store: \(error)")
             }
         }
-        // Устанавливаем мок
+        // Set the mock
         coreDataStackMock.containerGetStub = container
 
         storage = StorageImpl(
@@ -62,13 +62,13 @@ final class StorageImplTests: XCTestCase {
         // then
         XCTAssertEqual(coreDataStackMock.contextGetWasCalled, 4, "Context was not obtained")
 
-        // Проверяем наличие записи в контексте
+        // Check that a record exists in the context
         let fetchRequest: NSFetchRequest<BatchEntity> = BatchEntity.fetchRequest()
         let fetchedEntities = try coreDataStackMock.context.fetch(fetchRequest)
 
-        // Проверяем, что была добавлена одна запись
+        // Check that exactly one record was added
         XCTAssertEqual(fetchedEntities.count, 1, "Record was not added.")
-        // Проверяем содержание добавленной записи
+        // Check the content of the added record
         let fetchedEntity = try XCTUnwrap(fetchedEntities.first)
         XCTAssertNotNil(fetchedEntity)
         XCTAssertEqual(fetchedEntity.data, TestData.batchString)
@@ -87,10 +87,10 @@ final class StorageImplTests: XCTestCase {
         } catch {
             switch String(describing: error) {
                case let str where str.contains("invalidJSON"):
-                   // Ошибка нужного типа
+                   // Error of the expected type
                    break
                default:
-                   XCTFail("Ожидалась ошибка invalidJSON, а получена \(error)")
+                   XCTFail("Expected an invalidJSON error, got \(error)")
                }
         }
 
@@ -111,6 +111,43 @@ final class StorageImplTests: XCTestCase {
         XCTAssertEqual(model?.batch as? [String: Int], TestData.batch)
     }
 
+    func testsNextBatchKeepsDecimalFormOfFractionalNumbers() throws {
+        // given: 2.65 is not representable in binary floating point. Parsing JSON yields a Double,
+        // and without normalization it serializes back as 2.6499999999999999
+        let batch: Batch = ["cpu": 2.65]
+        try storage.addBatch(batch)
+        // when
+        let model = try storage.nextBatch()
+        let reserialized = try JSONSerialization.data(withJSONObject: XCTUnwrap(model?.batch))
+        // then
+        let json = try XCTUnwrap(String(data: reserialized, encoding: .utf8))
+        XCTAssertEqual(json, #"{"cpu":2.65}"#)
+    }
+
+    func testsNextBatchKeepsIntegersAndBoolsIntact() throws {
+        // given
+        let batch: Batch = ["ram": 32, "flag": true, "name": "foreground"]
+        try storage.addBatch(batch)
+        // when
+        let model = try storage.nextBatch()
+        // then: normalization must not turn integers into fractions, nor booleans into numbers
+        XCTAssertEqual(model?.batch["ram"] as? Int, 32)
+        XCTAssertEqual(model?.batch["flag"] as? Bool, true)
+        XCTAssertEqual(model?.batch["name"] as? String, "foreground")
+    }
+
+    func testsNextBatchNormalizesNestedAndArrayValues() throws {
+        // given: events live in an array inside the batch, so normalization has to be recursive
+        let batch: Batch = ["events": [["cpu": 0.533], ["cpu": 4.26]]]
+        try storage.addBatch(batch)
+        // when
+        let model = try storage.nextBatch()
+        let reserialized = try JSONSerialization.data(withJSONObject: XCTUnwrap(model?.batch))
+        // then
+        let json = try XCTUnwrap(String(data: reserialized, encoding: .utf8))
+        XCTAssertEqual(json, #"{"events":[{"cpu":0.533},{"cpu":4.26}]}"#)
+    }
+
     func testsRemoveBatch() throws {
         // given
         jsonSerializerMock.dataStub = TestData.batchData
@@ -127,7 +164,7 @@ final class StorageImplTests: XCTestCase {
             XCTFail("Error remove batch: \(error)")
         }
         // then
-        // Проверяем наличие записи в контексте
+        // Check that a record exists in the context
         let fetchRequest: NSFetchRequest<BatchEntity> = BatchEntity.fetchRequest()
         let fetchedEntities = try coreDataStackMock.context.fetch(fetchRequest)
         XCTAssertEqual(fetchedEntities.count, 0, "Record was not added.")

@@ -59,7 +59,7 @@ final class StorageImpl: Storage {
 
             do {
                 if let batchEntity = try context.fetch(fetchRequest).first {
-                    // Проверяем валидность объекта
+                    // Check that the object is valid
                     if batchEntity.isDeleted || batchEntity.managedObjectContext == nil {
                         logger.error(
                             Constants.logLabel,
@@ -96,7 +96,7 @@ final class StorageImpl: Storage {
             do {
                 let batches = try context.fetch(fetchRequest)
                 if let batchToDelete = batches.first {
-                    // Проверяем валидность объекта
+                    // Check that the object is valid
                     if batchToDelete.isDeleted || batchToDelete.managedObjectContext == nil {
                         logger.error(
                             Constants.logLabel,
@@ -127,7 +127,10 @@ final class StorageImpl: Storage {
             throw StorageErrors.invalidJSON
         }
         if let batch = try JSONSerialization.jsonObject(with: jsonData, options: []) as? Batch {
-            return batch
+            // Parsing JSON turns every fractional number into a Double, and JSONSerialization
+            // prints a Double with all 17 significant digits. Without normalization the CPU
+            // frequency would reach the server as 2.6499999999999999 instead of 2.65
+            return batch.withDecimalNumbers
         } else {
             throw StorageErrors.castingToDictionaryFailed
         }

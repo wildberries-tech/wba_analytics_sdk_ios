@@ -32,7 +32,7 @@ private extension String {
 
 private extension String {
     enum Constants {
-        // Формат UUID фиксирован
+        // UUID format is fixed
         static let zeroIDFA = "00000000-0000-0000-0000-000000000000"
     }
 }

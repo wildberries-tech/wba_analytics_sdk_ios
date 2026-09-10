@@ -30,13 +30,13 @@ final class CoreDataStack: CoreDataStackProtocol {
     private let apiKey: String
     private let logger: Logger
 
-    // Инициализация с конкретным apiKey
+    // Initialization with a specific apiKey
     init(apiKey: String, logger: Logger) {
         self.apiKey = apiKey
         self.logger = logger
     }
 
-    // Получаем контекст для работы с данными
+    // Get the context for working with data
     private(set) lazy var context: NSManagedObjectContext = {
         let context = container.newBackgroundContext()
         return context
@@ -62,7 +62,7 @@ final class CoreDataStack: CoreDataStackProtocol {
         return container
     }()
 
-    // Генерируем уникальный путь для базы данных для каждого apiKey
+    // Generate a unique database path for each apiKey
     private func storeURL() -> URL {
         let fileManager = FileManager.default
         let directoryURL = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first

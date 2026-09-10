@@ -99,6 +99,18 @@ public final class WildAnalyticsSDK {
         }
     }
 
+    /// Sends the dynamic_link_app_open event to all registered receivers
+    public func trackLaunchURL(_ url: URL, referrerURL: URL? = nil) {
+        receivers.values.forEach {
+            $0.trackLaunchURL(url, referrerURL: referrerURL)
+        }
+    }
+
+    /// Sends the dynamic_link_app_open event to a specific receiver
+    public func trackLaunchURL(_ url: URL, referrerURL: URL? = nil, receiverIdentifier: String) {
+        receivers[receiverIdentifier]?.trackLaunchURL(url, referrerURL: referrerURL)
+    }
+
     public func trackUserEngagement(_ userEngagement: UserEngagement, receiverIdentifier: String) {
         receivers[receiverIdentifier]?.trackUserEngagement(userEngagement)
     }

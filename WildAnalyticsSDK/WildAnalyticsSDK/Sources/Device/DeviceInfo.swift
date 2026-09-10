@@ -8,8 +8,8 @@
 public import Foundation
 public import UIKit.UIDevice
 
-/// Зеркальная модель UIDevice+Extension. Которой можно пользоваться
-/// Не в Main потоке
+/// A mirror model of UIDevice+Extension, which can be used
+/// off the main thread
 public final class DeviceInfo: Sendable {
     public static let current: DeviceInfo = {
         func setup() -> DeviceInfo {
@@ -53,24 +53,24 @@ public final class DeviceInfo: Sendable {
     public let deviceId: String?
 
     /// Not affected by rotating device
-    /// соответствует Points (Standard) или Points (Zoomed) из таблицы:
+    /// Corresponds to Points (Standard) or Points (Zoomed) from the table:
     /// https://gist.github.com/ricsantos/e7baee6885626b9cb87c021a5097623f
     public let screenPointsSize: CGSize
-    /// Отношение Device Resolution к текущим Points (т.е. Standard или Zoomed) из таблицы:
+    /// The ratio of Device Resolution to the current Points (i.e. Standard or Zoomed) from the table:
     /// https://gist.github.com/ricsantos/e7baee6885626b9cb87c021a5097623f
-    /// == 2 для iPhone XR, 11, 8-, SE (3- gen)
-    /// == 2 для iPad
-    /// == 3 для остальных устройств
+    /// == 2 for iPhone XR, 11, 8-series, SE (3rd gen)
+    /// == 2 for iPad
+    /// == 3 for the remaining devices
     public let screenScale: CGFloat
-    /// соответствует Screen Resolution из таблицы:
+    /// Corresponds to Screen Resolution from the table:
     /// https://gist.github.com/ricsantos/e7baee6885626b9cb87c021a5097623f
     public let screenPixelsSize: CGSize
-    /// Отношение Screen Resolution к текущим Points (т.е. Standard или Zoomed) из таблицы:
+    /// The ratio of Screen Resolution to the current Points (i.e. Standard or Zoomed) from the table:
     /// https://gist.github.com/ricsantos/e7baee6885626b9cb87c021a5097623f
-    /// Если Zoom выключен, то обычно равен screenScale
-    /// Хотя на некоторых устройствах будет меньше, ex: iPhone 12/13 mini, 6/6s/7/8 Plus
-    /// Если же Zoom включен, то будет больше screenScale
-    /// даже на упомянутых устройствах
+    /// If Zoom is off, this is usually equal to screenScale
+    /// though on some devices it will be smaller, e.g. iPhone 12/13 mini, 6/6s/7/8 Plus
+    /// If Zoom is on, it will be greater than screenScale
+    /// even on the devices mentioned above
     private let screenPixelsScale: CGFloat
 
     public let iOSVersion: Float
@@ -108,7 +108,7 @@ public final class DeviceInfo: Sendable {
         UIDevice.batteryStateDidChangeNotification
     }
 
-    /// Возвращает тип устройства как строку (например, "iPhone", "iPad", "iPod")
+    /// Returns the device type as a string (e.g. "iPhone", "iPad", "iPod")
     public var deviceType: String {
         switch userInterfaceIdiom {
         case .phone:
@@ -149,7 +149,7 @@ public final class DeviceInfo: Sendable {
         convertIdentifierToModelName(identifier)
     }
 
-    /// Объем физически доступной памяти на устройстве в MB
+    /// The amount of physically available RAM on the device, in MB
     public static let availableRAM: UInt64 = {
         /// Available RAM in GBs
         let bytesPerGigabyte: UInt64 = 1024 * 1024 * 1024
@@ -158,7 +158,7 @@ public final class DeviceInfo: Sendable {
         return availableRAM
     }()
 
-    // Получает версию билда OS
+    // Gets the OS build version
     public static let osBuildIdentifier: String = {
         let versionString = ProcessInfo.processInfo.operatingSystemVersionString
         if let buildIdRange = versionString.range(of: String.osBuildNumberRegExPattern, options: .regularExpression) {

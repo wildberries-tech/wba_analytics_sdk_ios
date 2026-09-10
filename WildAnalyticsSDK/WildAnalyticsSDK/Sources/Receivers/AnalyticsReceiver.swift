@@ -54,6 +54,12 @@ public protocol AnalyticsReceiver {
     /// - Parameter handler: Handler called when session value updates
     func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void)
 
+    /// Tracks the URL the app was opened with — the dynamic_link_app_open event.
+    /// - Parameters:
+    ///   - url: URL the app was opened with
+    ///   - referrerURL: Referrer of the link the app was opened with
+    func trackLaunchURL(_ url: URL, referrerURL: URL?)
+
     /// Returns a view controller to display debug logs for this receiver.
     func showLogScreen() -> UIViewController?
 }
@@ -72,4 +78,15 @@ public extension AnalyticsReceiver {
     func trackEvent(name: String, parameters: [String: Any]?) {}
     /// Logging generic for sending an event with the provided parameters.
     func trackEvent<P>(name: String, parameters: [P]?) where P: Encodable {}
+}
+
+public extension AnalyticsReceiver {
+
+    /// Default implementation: receivers that don't support this event simply ignore it
+    func trackLaunchURL(_ url: URL, referrerURL: URL?) { }
+
+    /// Convenience overload without a referrer — dispatches to the receiver's implementation
+    func trackLaunchURL(_ url: URL) {
+        trackLaunchURL(url, referrerURL: nil)
+    }
 }

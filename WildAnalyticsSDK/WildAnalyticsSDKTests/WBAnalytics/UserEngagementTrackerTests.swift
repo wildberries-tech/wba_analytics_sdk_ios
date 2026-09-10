@@ -36,7 +36,7 @@ final class UserEngagementTrackerTests: XCTestCase {
         let mirror = Mirror(reflecting: userTracker)
         // then
         XCTAssertNil(mirror.delegate)
-        XCTAssertIdentical(mirror.timerMaker, Timer.self)
+        XCTAssertTrue(mirror.periodicTracker is PeriodicTracker)
     }
 
     // MARK: set
@@ -58,8 +58,6 @@ final class UserEngagementTrackerTests: XCTestCase {
         // when
         userEngagementTracker.start()
         // then
-        let mirror = Mirror(reflecting: userEngagementTracker)
-        XCTAssertIdentical(mirror.timer, timerMock)
         XCTAssertEqual(timerMaker.timerWasCalled, 1)
         XCTAssertEqual(timerMaker.timerReceivedArguments?.timeInterval, TestData.timerInterval)
         XCTAssertEqual(timerMaker.timerReceivedArguments?.repeats, true)
@@ -113,8 +111,7 @@ private extension UserEngagementTrackerTests {
         }
 
         // And then we just declare the properties we want to test:
-        var timerMaker: TimerProtocol.Type? { extract() }
-        var timer: TimerProtocol? { extract() }
+        var periodicTracker: PeriodicTrackerProtocol? { extract() }
         var lastUserEngagement: UserEngagement? { extract() }
         var delegate: UserEngagementTrackerDelegate? { extract() }
     }

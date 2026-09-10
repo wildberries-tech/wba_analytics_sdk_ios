@@ -43,7 +43,7 @@ extension Version {
         case unknown
     }
 
-    /// Тип процессора
+    /// CPU type
     var cpu: CPU {
         switch self {
         /*** iPhone **/
@@ -174,7 +174,7 @@ extension Version {
         }
     }
 
-    /// Тактовая частота процессора, ГГц
+    /// CPU clock frequency, GHz
     var frequency: Double {
         switch self.cpu {
         case .s5l8720: return 0.533
@@ -211,6 +211,51 @@ extension Version {
         case .m4: return 4.41
         case .m5: return 4.61
         case .unknown: return 1
+        }
+    }
+}
+
+extension Version.CPU {
+    /// Marketing name of the processor. The iOS equivalent of Build.SOC_MODEL on Android:
+    /// there's no direct system source on iOS — sysctl machdep.cpu.brand_string doesn't
+    /// return a value on Apple Silicon devices.
+    var name: String {
+        switch self {
+        case .s5l8720: return "S5L8720"
+        case .s5l8900: return "S5L8900"
+        case .s5l8920: return "S5L8920"
+        case .s5pc100: return "S5PC100"
+        case .a4: return "A4"
+        case .a5: return "A5"
+        case .a5X: return "A5X"
+        case .a6: return "A6"
+        case .a6X: return "A6X"
+        case .a7: return "A7"
+        case .a8: return "A8"
+        case .a8X: return "A8X"
+        case .a9: return "A9"
+        case .a9X: return "A9X"
+        case .a10Fusion: return "A10 Fusion"
+        case .a10XFusion: return "A10X Fusion"
+        case .a11Bionic: return "A11 Bionic"
+        case .a12Bionic: return "A12 Bionic"
+        case .a12XBionic: return "A12X Bionic"
+        case .a12ZBionic: return "A12Z Bionic"
+        case .a13Bionic: return "A13 Bionic"
+        case .a14Bionic: return "A14 Bionic"
+        case .a15Bionic: return "A15 Bionic"
+        case .a16Bionic: return "A16 Bionic"
+        case .a17Pro: return "A17 Pro"
+        case .a18: return "A18"
+        case .a18Pro: return "A18 Pro"
+        case .a19: return "A19"
+        case .a19Pro: return "A19 Pro"
+        case .m1: return "M1"
+        case .m2: return "M2"
+        case .m3: return "M3"
+        case .m4: return "M4"
+        case .m5: return "M5"
+        case .unknown: return "unknown"
         }
     }
 }

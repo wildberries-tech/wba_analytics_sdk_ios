@@ -23,20 +23,28 @@ final class UserEngagementTracker: UserEngagementTrackerProtocol {
         static let timerInterval = 30.0
     }
 
-    private let timerMaker: TimerProtocol.Type
-    private(set) var timer: TimerProtocol?
+    /// The timer lives in PeriodicTracker, shared with heartbeat: what stays here is
+    /// the user engagement specifics — the last collected payload and the delegate
+    private let periodicTracker: PeriodicTrackerProtocol
     private var lastUserEngagement: UserEngagement?
     private weak var delegate: UserEngagementTrackerDelegate?
 
     /// Initializer for User Engagement Tracker
-    /// - Parameter queue: DispatchQueue where DispatchSourceTimer will be working on
     /// - Parameter delegate: The delegate to be notified when user engagement should be tracked
+    /// - Parameter timerMaker: Factory of the underlying periodic timer
     init(
         delegate: UserEngagementTrackerDelegate? = nil,
         timerMaker: TimerProtocol.Type = Timer.self
     ) {
         self.delegate = delegate
-        self.timerMaker = timerMaker
+        self.periodicTracker = PeriodicTracker(
+            interval: Constants.timerInterval,
+            timerMaker: timerMaker
+        )
+        periodicTracker.setup { [weak self] in
+            guard let self else { return }
+            self.delegate?.didUserEngagementTrackerFire(self.lastUserEngagement)
+        }
     }
 
     /// Set the actual user engagements
@@ -47,18 +55,11 @@ final class UserEngagementTracker: UserEngagementTrackerProtocol {
 
     /// Start tracking user engagement
     func start() {
-        invalidate()
-        timer = timerMaker.timer(with: Constants.timerInterval, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.delegate?.didUserEngagementTrackerFire(self.lastUserEngagement)
-        }
-        timer?.schedule(on: .main)
+        periodicTracker.start()
     }
 
     /// Invalidate tracking
     func invalidate() {
-        guard let timer = timer, timer.isValid else { return }
-        timer.invalidate()
-        self.timer = nil
+        periodicTracker.invalidate()
     }
 }

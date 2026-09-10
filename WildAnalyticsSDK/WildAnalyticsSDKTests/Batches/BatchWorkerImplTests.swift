@@ -44,7 +44,7 @@ final class BatchWorkerImplTests: XCTestCase {
     func testDeadlineFirstSendBatchDelayed() {
         // given
         let time = (.now() + batchConfig.sendingDelay).uptimeNanoseconds
-        let tolerance: UInt64 = 1_000_000 // 1 миллисекунда
+        let tolerance: UInt64 = 1_000_000 // 1 millisecond
         // when
         worker.sendBatchDelayed(id: TestData.id, event: {})
         // then
@@ -140,7 +140,7 @@ final class BatchWorkerImplTests: XCTestCase {
     func testDeadlineCount11SendBatchDelayed() {
         // given
         let time = (.now() + batchConfig.sendingDelay).uptimeNanoseconds
-        let tolerance: UInt64 = 3_000_000 // 3 миллисекунды
+        let tolerance: UInt64 = 3_000_000 // 3 milliseconds
         // when
         worker.sendBatchDelayed(id: TestData.id, event: {})
         worker.sendBatchDelayed(id: TestData.id, event: {})

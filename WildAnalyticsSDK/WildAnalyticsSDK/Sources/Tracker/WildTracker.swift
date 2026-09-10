@@ -7,7 +7,7 @@ final class WildTracker {
     private let logger: CompositeLogger
     private let deviceFingerprintService: DeviceFingerprintService
 
-    /// WBTracker initialization
+    /// WildTracker initialization
     /// - Parameters:
     ///   - apiKey: API Key
     ///   - logger: Logger for event logging

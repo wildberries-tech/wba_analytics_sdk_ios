@@ -7,7 +7,7 @@ import Foundation
 public final class JSONSerializationMock: JSONSerialization {
     // MARK: - reset
 
-    /// Должно вызываться в tearDown
+    /// Must be called in tearDown
     public static func reset() {
         // data
         dataWasCalled = 0

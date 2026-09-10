@@ -7,25 +7,25 @@ import Foundation
 // MARK: - TimerProtocol
 
 public protocol TimerProtocol: AnyObject {
-    // MARK: Фабрики
+    // MARK: Factories
 
-    /// Создаёт таймер, но не запускает его
+    /// Creates a timer but doesn't start it.
     ///
-    /// После создания таймер необходимо запустить на необходимом `RunLoop` методом `schedule(on:)`.
+    /// After creation, the timer must be started on the needed `RunLoop` via `schedule(on:)`.
     static func timer(
         with timeInterval: TimeInterval,
         repeats: Bool,
         block: @escaping (Timer) -> Void
     ) -> TimerProtocol
 
-    /// Создаёт таймер и запускает его на текущем `RunLoop`.
+    /// Creates a timer and starts it on the current `RunLoop`.
     static func scheduledTimer(
         with timeInterval: TimeInterval,
         repeats: Bool,
         block: @escaping (Timer) -> Void
     ) -> TimerProtocol
 
-    // MARK: Свойства и методы экземпляра
+    // MARK: Instance properties and methods
 
     var isValid: Bool { get }
     func schedule(on runLoop: RunLoop)

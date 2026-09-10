@@ -106,16 +106,16 @@ extension FileLogger: LogFileHandling {
 
     func clearLogFile() {
         do {
-            // Закрываем старый файл, если открыт
+            // Close the old file if it's open
             fileHandle?.closeFile()
 
-            // Удаляем файл
+            // Remove the file
             try fileManager.removeItem(at: fileURL)
 
-            // Создаём пустой файл
+            // Create an empty file
             fileManager.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
 
-            // Переоткрываем fileHandle для нового файла
+            // Reopen the fileHandle for the new file
             fileHandle = try fileHandleType.init(forWritingTo: fileURL)
             fileHandle?.seekToEndOfFile()
 

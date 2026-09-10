@@ -10,7 +10,8 @@ protocol BatchProcessor {
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
         batchWorker: BatchWorker,
-        idfaProvider: IDFAProvider
+        idfaProvider: IDFAProvider,
+        enableAutomaticEvents: Bool
     )
     func launch()
     func update(isNewLaunch: Bool)
@@ -39,6 +40,7 @@ final class BatchProcessorImpl: BatchProcessor {
     // default value
     private var batches: [BatchModel] = []
     private var isNewLaunch = false
+    private var enableAutomaticEvents = false
     private var state: BatchProcessingState = .normal
 
     private var batchesFromStorage: [BatchModel] = []
@@ -71,7 +73,8 @@ final class BatchProcessorImpl: BatchProcessor {
         networkTypeProvider: NetworkTypeProviderProtocol,
         counter: EnumerationCounter,
         batchWorker: BatchWorker,
-        idfaProvider: IDFAProvider = SystemIDFAProvider(isDisabled: false)
+        idfaProvider: IDFAProvider = SystemIDFAProvider(isDisabled: false),
+        enableAutomaticEvents: Bool = false
     ) {
         self.batchSender = batchSender
         self.queue = queue
@@ -79,6 +82,7 @@ final class BatchProcessorImpl: BatchProcessor {
         self.counter = counter
         self.batchWorker = batchWorker
         self.idfaProvider = idfaProvider
+        self.enableAutomaticEvents = enableAutomaticEvents
         self.batchesFromStorage = userDefaultsStorage?.loadBatches() ?? []
         DeviceMemoryState.setState(.normal)
         batches = []
@@ -282,7 +286,8 @@ final class BatchProcessorImpl: BatchProcessor {
             networkType: networkType,
             deviceId: deviceId ?? WBAnalytics.deviceId,
             idfa: idfaProvider.currentIDFA(),
-            isNewUser: isNewLaunch
+            isNewUser: isNewLaunch,
+            enableAutomaticEvents: enableAutomaticEvents
         )
     }
 
@@ -301,17 +306,17 @@ final class BatchProcessorImpl: BatchProcessor {
 }
 
 extension BatchProcessorImpl {
-    /// Состояние обработки пакета (Batch) для управления логикой отправки данных.
+    /// The batch processing state, used to control the data-sending logic.
     ///
-    /// Это перечисление отслеживает состояние обработки пакетов и управляет повторной отправкой в случае неуспешной попытки.
+    /// This enum tracks the state of batch processing and manages retrying after a failed attempt.
     ///
     /// - `needRetain(BatchModel)`:
-    ///   Указывает на необходимость удерживать пакет для повторной отправки.
-    ///   Активируется при неуспешной отправке, передавая объект `BatchModel` с информацией о пакете.
+    ///   Indicates that the batch needs to be retained for a retry.
+    ///   Activated on a failed send, carrying a `BatchModel` object with the batch's information.
     ///
     /// - `normal`:
-    ///   Указывает на нормальное состояние, когда нет необходимости удерживать пакет для повторной отправки.
-    ///   Используется, если последняя отправка прошла успешно или нет ожидающих пакетов.
+    ///   Indicates the normal state, where there's no need to retain a batch for a retry.
+    ///   Used when the last send succeeded or there are no pending batches.
     ///
     enum BatchProcessingState {
         case needRetain(BatchModel)

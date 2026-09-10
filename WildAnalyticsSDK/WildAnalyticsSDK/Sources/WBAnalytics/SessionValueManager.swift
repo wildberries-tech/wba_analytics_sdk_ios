@@ -88,8 +88,8 @@ private extension SessionValueManager {
     }
 
     @objc func didFinishLaunching() {
-        // изначально генерируем из инициализатора, т.к. didFinishLaunchingNotification
-        // отрабатывает после отправки события first_open
+        // Generated in init from the start, because didFinishLaunchingNotification
+        // fires after the first_open event has already been sent
         if currentSessionValue.isEmpty {
             generateSessionValue()
         }

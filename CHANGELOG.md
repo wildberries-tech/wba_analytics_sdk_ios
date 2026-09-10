@@ -6,6 +6,14 @@
 - Публичные типы переименованы: `WBMNetworkType` → `WildNetworkType`, `WBAnalyticsReceiver` → `WildAnalyticsReceiver`, `WBAnalyticsDelegateProtocol` → `WildAnalyticsDelegateProtocol`, `WBTracker` → `WildTracker`.
 - Изменился runtime-идентификатор ресивера: `ru.wildberries.receiver_wbanalyticsreceiver` → `ru.wildberries.receiver_wildanalyticsreceiver` (если строка хардкодилась — заменить).
 - Гайд по миграции: [docs/MigrationGuide_4.0.0.md](docs/MigrationGuide_4.0.0.md).
+- Событие `heartbeat`: отправляется каждые 30 секунд, пока приложение на переднем плане
+- Новый параметр `enableAutomaticEvents` в инициализаторе `WildAnalyticsReceiver` управляет отправкой всех автоматических событий SDK: `first_open`, `application_start` и `heartbeat`. **По умолчанию `false`** — включите (`true`) для автоматического отслеживания установок, запусков приложения и времени активности. Если ваш продукт — библиотека для интеграции, держите `false`: автоматические события для интегрируемых продуктов работают нестабильно. На `user_engagement` и на события с явным вызовом флаг не влияет
+- В `meta` каждого батча добавлен ключ `enable_automatic_events` (`true` / `false`) — значение флага у интегратора
+- Параметр `cpu` события `application_start` округляется до двух знаков после запятой
+- Гайд по миграции на 4.0.3: [docs/MigrationGuide_4.0.3.md](docs/MigrationGuide_4.0.3.md).
+- Событие `first_open` больше не зависит от клиентского флага `isFirstLaunch`
+- Событие `application_start`: исправлена доставка, убран дубль на холодном старте, добавлен параметр `processor_name`
+- Событие `dynamic_link_app_open`: добавлен параметр `referrerURL` и публичный метод `trackLaunchURL`
 
 ## [v3.4.4](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/tags/3.4.4)
 

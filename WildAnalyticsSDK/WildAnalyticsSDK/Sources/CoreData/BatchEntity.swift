@@ -15,17 +15,17 @@ class BatchEntity: NSManagedObject {
     }
 
     static let schema: NSEntityDescription = {
-        // Создаём сущность BatchEntity
+        // Create the BatchEntity entity
         let batchEntity = NSEntityDescription()
-        // Имя сущности участвует в метаданных хранилища: менять его нельзя, иначе
-        // существующие хранилища станут нечитаемыми.
+        // The entity name is part of the store metadata: it can't be changed, otherwise
+        // existing stores would become unreadable.
         batchEntity.name = "BatchEntity"
-        // Имя класса разрешается через NSClassFromString, поэтому оно должно быть
-        // квалифицировано модулем — иначе Core Data может подставить BatchEntity
-        // из другой копии SDK.
+        // The class name is resolved via NSClassFromString, so it must be qualified by
+        // module — otherwise Core Data could substitute the BatchEntity from another
+        // copy of the SDK.
         batchEntity.managedObjectClassName = NSStringFromClass(BatchEntity.self)
 
-        // Добавляем атрибуты к сущности
+        // Add attributes to the entity
         let idAttribute = NSAttributeDescription()
         idAttribute.name = #keyPath(BatchEntity.id)
         idAttribute.attributeType = .stringAttributeType

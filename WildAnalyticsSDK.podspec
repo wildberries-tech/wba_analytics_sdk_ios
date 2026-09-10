@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name                     = "WildAnalyticsSDK"
-  spec.version                  = "4.0.3"
+  spec.version                  = "4.0.4"
   spec.summary                  = "SDK for logging events"
   spec.description              = "SDK for logging events"
 

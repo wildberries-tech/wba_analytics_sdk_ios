@@ -179,9 +179,15 @@ private extension AppStartTracker {
 extension AppStartTracker {
     /// The clock frequency is sent in the event rounded to hundredths: in the frequency table
     /// some of the older processors have three decimal places, while the event schema expects two.
+    /// The result is an NSDecimalNumber rather than a Double on purpose. A value such as 2.65
+    /// is not representable in binary floating point, and JSONSerialization prints such a Double
+    /// with all 17 significant digits: `2.6499999999999999`. A decimal built from an integer
+    /// number of hundredths is exact in base-10 and serializes as `2.65`.
+    ///
     /// Not private so that the rule can be covered by a test on specific values — the frequency
     /// of the device a test run happens on does not necessarily have three decimals
-    static func roundedFrequency(_ frequency: Double) -> Double {
-        (frequency * Constants.frequencyFractionScale).rounded() / Constants.frequencyFractionScale
+    static func roundedFrequency(_ frequency: Double) -> NSDecimalNumber {
+        let hundredths = (frequency * Constants.frequencyFractionScale).rounded()
+        return NSDecimalNumber(decimal: Decimal(Int(hundredths)) / Decimal(Int(Constants.frequencyFractionScale)))
     }
 }

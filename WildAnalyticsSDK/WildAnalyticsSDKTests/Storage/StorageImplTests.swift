@@ -111,6 +111,43 @@ final class StorageImplTests: XCTestCase {
         XCTAssertEqual(model?.batch as? [String: Int], TestData.batch)
     }
 
+    func testsNextBatchKeepsDecimalFormOfFractionalNumbers() throws {
+        // given: 2.65 is not representable in binary floating point. Parsing JSON yields a Double,
+        // and without normalization it serializes back as 2.6499999999999999
+        let batch: Batch = ["cpu": 2.65]
+        try storage.addBatch(batch)
+        // when
+        let model = try storage.nextBatch()
+        let reserialized = try JSONSerialization.data(withJSONObject: XCTUnwrap(model?.batch))
+        // then
+        let json = try XCTUnwrap(String(data: reserialized, encoding: .utf8))
+        XCTAssertEqual(json, #"{"cpu":2.65}"#)
+    }
+
+    func testsNextBatchKeepsIntegersAndBoolsIntact() throws {
+        // given
+        let batch: Batch = ["ram": 32, "flag": true, "name": "foreground"]
+        try storage.addBatch(batch)
+        // when
+        let model = try storage.nextBatch()
+        // then: normalization must not turn integers into fractions, nor booleans into numbers
+        XCTAssertEqual(model?.batch["ram"] as? Int, 32)
+        XCTAssertEqual(model?.batch["flag"] as? Bool, true)
+        XCTAssertEqual(model?.batch["name"] as? String, "foreground")
+    }
+
+    func testsNextBatchNormalizesNestedAndArrayValues() throws {
+        // given: events live in an array inside the batch, so normalization has to be recursive
+        let batch: Batch = ["events": [["cpu": 0.533], ["cpu": 4.26]]]
+        try storage.addBatch(batch)
+        // when
+        let model = try storage.nextBatch()
+        let reserialized = try JSONSerialization.data(withJSONObject: XCTUnwrap(model?.batch))
+        // then
+        let json = try XCTUnwrap(String(data: reserialized, encoding: .utf8))
+        XCTAssertEqual(json, #"{"events":[{"cpu":0.533},{"cpu":4.26}]}"#)
+    }
+
     func testsRemoveBatch() throws {
         // given
         jsonSerializerMock.dataStub = TestData.batchData

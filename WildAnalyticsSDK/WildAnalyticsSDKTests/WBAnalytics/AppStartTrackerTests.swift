@@ -155,40 +155,57 @@ final class AppStartTrackerTests: XCTestCase {
         )
     }
 
-    func testCPUFrequencyIsRoundedToTwoDecimals() throws {
-        // when
-        setupSubject()
-        dispatcherMock.asyncReceivedWork?()
-        // then: in the frequency table some processors have three decimal places (0.533, 0.412),
-        // the value must leave the SDK with two. We check the invariant rather than a specific
-        // number: it depends on the processor of the machine the tests run on
-        let cpu = try XCTUnwrap(trackedInputs.first?.parameters?["cpu"] as? Double)
-        let scaledToHundredths = cpu * 100
-        XCTAssertEqual(scaledToHundredths, scaledToHundredths.rounded(), accuracy: 1e-6)
-    }
-
     func testCPUFrequencyMatchesRoundedTableValueForCurrentDevice() {
         // when
         setupSubject()
         dispatcherMock.asyncReceivedWork?()
         // then: the tracker reports the rounded value, not the raw one from the table
         let expected = AppStartTracker.roundedFrequency(Version(modelID: DeviceInfo.modelID).frequency)
-        XCTAssertEqual(trackedInputs.first?.parameters?["cpu"] as? Double, expected)
+        XCTAssertEqual(trackedInputs.first?.parameters?["cpu"] as? NSDecimalNumber, expected)
     }
 
     func testRoundedFrequencyCutsThirdDecimal() {
         // then: values from the frequency table that have three decimal places
-        XCTAssertEqual(AppStartTracker.roundedFrequency(0.533), 0.53)
-        XCTAssertEqual(AppStartTracker.roundedFrequency(0.412), 0.41)
-        XCTAssertEqual(AppStartTracker.roundedFrequency(0.600), 0.6)
+        XCTAssertEqual(AppStartTracker.roundedFrequency(0.533), NSDecimalNumber(string: "0.53"))
+        XCTAssertEqual(AppStartTracker.roundedFrequency(0.412), NSDecimalNumber(string: "0.41"))
+        XCTAssertEqual(AppStartTracker.roundedFrequency(0.600), NSDecimalNumber(string: "0.6"))
     }
 
     func testRoundedFrequencyKeepsValuesThatAlreadyFit() {
         // then: values with two decimals or fewer must stay untouched
-        XCTAssertEqual(AppStartTracker.roundedFrequency(4.26), 4.26)
-        XCTAssertEqual(AppStartTracker.roundedFrequency(2.65), 2.65)
-        XCTAssertEqual(AppStartTracker.roundedFrequency(3.1), 3.1)
-        XCTAssertEqual(AppStartTracker.roundedFrequency(1), 1)
+        XCTAssertEqual(AppStartTracker.roundedFrequency(4.26), NSDecimalNumber(string: "4.26"))
+        XCTAssertEqual(AppStartTracker.roundedFrequency(2.65), NSDecimalNumber(string: "2.65"))
+        XCTAssertEqual(AppStartTracker.roundedFrequency(3.1), NSDecimalNumber(string: "3.1"))
+        XCTAssertEqual(AppStartTracker.roundedFrequency(1), NSDecimalNumber(string: "1"))
+    }
+
+    func testRoundedFrequencySerializesWithoutFloatingPointTail() throws {
+        // given: 2.65 is not representable in binary floating point, and as a Double it
+        // serializes into 2.6499999999999999 — exactly what shows up in the request logs
+        let table: [Double] = [2.65, 0.533, 0.412, 4.26, 2.26, 2.34, 3.46, 4.61]
+        for frequency in table {
+            // when
+            let payload: [String: Any] = ["cpu": AppStartTracker.roundedFrequency(frequency)]
+            let data = try JSONSerialization.data(withJSONObject: payload)
+            let json = try XCTUnwrap(String(data: data, encoding: .utf8))
+            // then
+            XCTAssertFalse(
+                json.contains("99999"),
+                "frequency \(frequency) was sent with a tail: \(json)"
+            )
+        }
+    }
+
+    func testCPUParameterSerializesToTwoDecimalsInEvent() throws {
+        // given
+        setupSubject()
+        dispatcherMock.asyncReceivedWork?()
+        let parameters = try XCTUnwrap(trackedInputs.first?.parameters)
+        // when
+        let data = try JSONSerialization.data(withJSONObject: parameters)
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8))
+        // then: the request body must not contain a tail like 2.6499999999999999
+        XCTAssertFalse(json.contains("99999"), json)
     }
 
     func testSecondSetupDoesNotTrackLaunchAgain() {

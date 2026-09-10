@@ -75,7 +75,8 @@ final class UserDefaultsStorageImpl: UserDefaultsStorage {
         successfullySentInBackgroundBatchesIds = []
         logger.debug(Constants.logLabel, "loaded batches: \(batches)")
         return batches.map {
-            BatchModel(id: $0.key, batch: $0.value)
+            // Same as in StorageImpl: parsing JSON loses the decimal form of fractional numbers
+            BatchModel(id: $0.key, batch: $0.value.withDecimalNumbers)
         }
     }
 

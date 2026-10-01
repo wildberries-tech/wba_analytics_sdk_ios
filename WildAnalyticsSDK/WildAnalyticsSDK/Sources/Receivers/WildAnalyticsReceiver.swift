@@ -166,6 +166,6 @@ public extension WildAnalyticsReceiver {
 extension WildAnalyticsReceiver {
 
     public static var defaultAnalyticsURL: URL {
-        URL(string: "https://wba.wb.ru/m/batch")!
+        URL(string: "https://a.wild-analytics.com/m/batch")!
     }
 }

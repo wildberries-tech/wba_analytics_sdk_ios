@@ -1,5 +1,5 @@
 {
-  "analyticsURL": "https://wba.wb.ru/m/batch",
+  "analyticsURL": "https://a.wild-analytics.com/m/batch",
   "batch": {
     "sendingDelay": 2,
     "size": 200,

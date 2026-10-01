@@ -2,7 +2,7 @@ attributes:
   BuildIndependentTargetsInParallel: '1'
   LastSwiftUpdateCheck: '1500'
   LastUpgradeCheck: '1500'
-  ORGANIZATIONNAME: Wildberries LLC
+  ORGANIZATIONNAME: WildAnalytics
 
 name: WildAnalyticsSDK
 options:
@@ -162,7 +162,7 @@ targets:
           INFOPLIST_KEY_NSHumanReadableCopyright: ''
           IPHONEOS_DEPLOYMENT_TARGET: '13.0'
           MARKETING_VERSION: '0.0.1'
-          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
+          PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
           SWIFT_EMIT_LOC_STRINGS: 'YES'
           SWIFT_VERSION: '5.0'
         Release:
@@ -172,7 +172,7 @@ targets:
           INFOPLIST_KEY_NSHumanReadableCopyright: ''
           IPHONEOS_DEPLOYMENT_TARGET: '13.0'
           MARKETING_VERSION: '0.0.1'
-          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
+          PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
           SWIFT_EMIT_LOC_STRINGS: 'YES'
           SWIFT_VERSION: '5.0'
     sources:
@@ -214,7 +214,7 @@ targets:
           DEVELOPMENT_TEAM: 4Y4A396ZEB
           GENERATE_INFOPLIST_FILE: 'YES'
           MARKETING_VERSION: '0.0.1'
-          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
+          PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
         Release:
@@ -224,7 +224,7 @@ targets:
           DEVELOPMENT_TEAM: 4Y4A396ZEB
           GENERATE_INFOPLIST_FILE: 'YES'
           MARKETING_VERSION: '0.0.1'
-          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
+          PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
     sources:
@@ -246,7 +246,7 @@ targets:
           DEVELOPMENT_TEAM: 4Y4A396ZEB
           GENERATE_INFOPLIST_FILE: 'YES'
           MARKETING_VERSION: '0.0.1'
-          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
+          PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
           TVOS_DEPLOYMENT_TARGET: '13.0'
@@ -259,7 +259,7 @@ targets:
           DEVELOPMENT_TEAM: 4Y4A396ZEB
           GENERATE_INFOPLIST_FILE: 'YES'
           MARKETING_VERSION: '0.0.1'
-          PRODUCT_BUNDLE_IDENTIFIER: RU.WILDBERRIES.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
+          PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
           TVOS_DEPLOYMENT_TARGET: '13.0'

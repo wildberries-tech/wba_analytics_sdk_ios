@@ -1,4 +1,4 @@
-// Copyright © 2021 Wildberries. All rights reserved.
+// Copyright © 2021 WildAnalytics. All rights reserved.
 
 /// Enum representing the type of network connection.
 public enum WildNetworkType: String {

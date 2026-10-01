@@ -2,7 +2,7 @@
 //  Type.swift
 //  WildAnalyticsSDK
 //
-//  Copyright © 2025 Wildberries LLC. All rights reserved.
+//  Copyright © 2025 WildAnalytics. All rights reserved.
 //
 
 // swiftlint:disable identifier_name

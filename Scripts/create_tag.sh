@@ -14,13 +14,3 @@ fi
 
 # Получение новой версии из файла Tag.swift
 version=$(grep -o -E '[0-9]+\.[0-9]+\.[0-9]+' "$TAG_VERSION_FILE")
-
-# Проверка, существует ли тег с такой версией
-if git rev-parse "$version" >/dev/null 2>&1; then
-    echo "Тег $version уже существует. Пропускаем создание тега."
-else
-    # Создание тега с версией
-    git tag "$version"
-    echo "Создан тег: $version"
-    git push https://gitlab-ci-token:$GITLAB_TOKEN@gitlab.wildberries.ru/mobile/ios/analytics.git "$version"
-fi

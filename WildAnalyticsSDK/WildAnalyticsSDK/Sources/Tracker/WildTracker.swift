@@ -1,8 +1,8 @@
-// Copyright © 2025 Wildberries. All rights reserved.
+// Copyright © 2025 WildAnalytics. All rights reserved.
 
 import Foundation
 
-/// Main tracker for Wildberries analytics
+/// Main tracker for WildAnalytics analytics
 final class WildTracker {
     private let logger: CompositeLogger
     private let deviceFingerprintService: DeviceFingerprintService

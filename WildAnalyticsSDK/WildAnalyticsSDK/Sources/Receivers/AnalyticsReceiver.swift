@@ -1,4 +1,4 @@
-//  Copyright © 2021 Wildberries LLC. All rights reserved.
+//  Copyright © 2021 WildAnalytics. All rights reserved.
 
 import Foundation
 import UIKit

@@ -2,7 +2,7 @@
 //  Version.swift
 //  WildAnalyticsSDK
 //
-//  Copyright © 2025 Wildberries LLC. All rights reserved.
+//  Copyright © 2025 WildAnalytics. All rights reserved.
 //
 
 import CoreGraphics

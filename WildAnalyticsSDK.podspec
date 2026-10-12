@@ -4,10 +4,10 @@ Pod::Spec.new do |spec|
   spec.summary                  = "SDK for logging events"
   spec.description              = "SDK for logging events"
 
-  spec.homepage                 = "https://gitlab.wildberries.ru/mobile/ios/analytics"
+  spec.homepage                 = "https://github.com/wildberries-tech/wba_analytics_sdk_ios.git"
   spec.license                  = { :type => "MIT", :file => "LICENSE" }
   spec.author                   = { "Wildberries" => "mobile@wildberries.ru" }
-  spec.source                   = { :git => "https://gitlab.wildberries.ru/mobile/ios/analytics.git" }
+  spec.source                   = { :git => "https://github.com/wildberries-tech/wba_analytics_sdk_ios.git.git" }
 
   # Platform and deployment target
   spec.ios.deployment_target    = "13.0"
@@ -43,6 +43,6 @@ Pod::Spec.new do |spec|
   }
 
   # Documentation
-  spec.documentation_url        = "https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/README.md"
+  spec.documentation_url        = "https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/README.md"
 
 end 

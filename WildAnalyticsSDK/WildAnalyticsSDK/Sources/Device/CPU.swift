@@ -1,5 +1,5 @@
 //
-//  Copyright © 2026 Wildberries LLC. All rights reserved.
+//  Copyright © 2026 WildAnalytics. All rights reserved.
 //
 
 // swiftlint:disable identifier_name

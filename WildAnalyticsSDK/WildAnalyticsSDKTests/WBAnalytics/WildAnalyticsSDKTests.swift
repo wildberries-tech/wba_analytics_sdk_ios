@@ -1,5 +1,5 @@
 //
-//  Copyright © 2024 Wildberries LLC. All rights reserved.
+//  Copyright © 2024 WildAnalytics. All rights reserved.
 //
 
 import XCTest
@@ -345,7 +345,7 @@ final class WildAnalyticsSDKTests: XCTestCase {
         )
 
         let mirror = WBAnalyticsMirror(reflecting: analytics)
-        let testURL = URL(string: "https://www.wildberries.ru/catalog/123456/detail.aspx")!
+        let testURL = URL(string: "https://google.com")!
 
         // when
         // Simulate successful attribution with a link

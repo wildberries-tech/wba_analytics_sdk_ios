@@ -1,4 +1,4 @@
-// Copyright © 2021 Wildberries. All rights reserved.
+// Copyright © 2021 WildAnalytics. All rights reserved.
 
 import Foundation
 

@@ -2,7 +2,7 @@
 //  CoreDataStackMock.swift
 //  WildAnalyticsSDKTests
 //
-//  Copyright © 2024 Wildberries LLC. All rights reserved.
+//  Copyright © 2024 WildAnalytics. All rights reserved.
 //
 
 import Foundation

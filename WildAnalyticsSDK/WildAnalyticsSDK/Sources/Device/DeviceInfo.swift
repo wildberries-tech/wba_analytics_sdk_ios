@@ -2,7 +2,7 @@
 //  DeviceInfo.swift
 //  WildAnalyticsSDK
 //
-//  Copyright © 2026 Wildberries LLC. All rights reserved.
+//  Copyright © 2026 WildAnalytics. All rights reserved.
 //
 
 public import Foundation
@@ -29,7 +29,6 @@ public final class DeviceInfo: Sendable {
                     screenPixelsScale: screen.nativeScale,
                     screenPointsSize: screenBoundsSize.vertical,
                     screenScale: screen.scale,
-                    // FIXME: https://youtrack.wildberries.ru/issue/IOS-60129
                     iOSVersion: (systemVersion as NSString).floatValue,
                     userInterfaceIdiom: userInterfaceIdiom,
                     identifierForVendor: identifierForVendor,

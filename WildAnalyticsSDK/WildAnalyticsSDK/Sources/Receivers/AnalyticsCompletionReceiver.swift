@@ -1,5 +1,5 @@
 //
-//  Copyright © 2025 Wildberries LLC. All rights reserved.
+//  Copyright © 2025 WildAnalytics. All rights reserved.
 //
 
 /// AnalyticsCompletionReceiver is a protocol that defines methods for analytics tracking

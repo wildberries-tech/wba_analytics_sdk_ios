@@ -4,10 +4,10 @@ platform :ios do
 
   lane :build_and_test do
     scan(
-      project: './WildAnalyticsSDK.xcodeproj',
+      project: './WBASDK.xcodeproj',
       prelaunch_simulator: true,
       clean: true,
-      only_testing: 'WildAnalyticsSDKTests'
+      only_testing: 'WBASDKTests'
     )
   end
 end

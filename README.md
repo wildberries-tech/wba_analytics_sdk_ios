@@ -1,10 +1,11 @@
-# WildAnalyticsSDK
+# WBASDK
 
 SDK для логирования событий в IOS-приложении. События последовательно группируются в батчи и отправляются на сервер. Поддерживается конфигурация для production и debug окружений. Ведется подсчет отправленных событий и батчей для контроля потери данных. До момента отправки события хранятся в CoreData. В случае отсутствия сети события будут отправлены при её появлении. 
 
-## 🧭 Что нового в 4.1.0
+## 🧭 Что нового в 5.0.0
 
-- **Потокобезопасность и `Sendable`.** Публичный API (`WildAnalyticsSDK`, ресиверы) стал потокобезопасным и соответствует `Sendable`: регистрация и использование ресиверов безопасны при вызове из разных потоков.
+- **Переименование.** Пакет `WildAnalyticsSDK` переименован в `WBASDK` (`import WBASDK`), публичные типы получили префикс `WBA`: `WBAReceiver`, `WBADelegateProtocol`, `WBANetworkType`. Подробнее — [docs/MigrationGuide_5.0.0.md](docs/MigrationGuide_5.0.0.md).
+- **Потокобезопасность и `Sendable`.** Публичный API (`WBASDK`, ресиверы) стал потокобезопасным и соответствует `Sendable`: регистрация и использование ресиверов безопасны при вызове из разных потоков.
 - **`session_value` — число.** `setSessionValue(_ value: UInt64?)` и `setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void)` вместо `String?`. Значение сессии общее для всех инстансов SDK в приложении.
 - **`meta.locale`** теперь содержит язык и регион ОС в формате BCP-47 (например, `en-US`).
 - **`UserEngagement.scaleFactor`** теперь `CGFloat?` вместо `String?`, в событии отправляется числом.
@@ -15,14 +16,14 @@ SDK для логирования событий в IOS-приложении. С
 SDK поставляется через SPM, для добавления в свой проект достаточно добавить в свой проект 
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.1.0")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "5.0.0")
 ```
 
 ## 🚀 Launch in app
 
 В приложении подразумевается один инстанс аналитики который может поддерживает несколько ресиверов
 
-Для создания экземпляра WildAnalyticsReceiver необходимо передать несколько обязательных параметров в его инициализатор:
+Для создания экземпляра WBAReceiver необходимо передать несколько обязательных параметров в его инициализатор:
     
 - **environment:** Окружение приложения, может быть .production или .test, при необходимости можно установить свой apiKey .custom("apiKey"). ([пример](https://gitlab.wildberries.ru/mobile/ios/analytics/-/blob/master/WBAnalyticsKit/WBAnalyticsKitTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL, на который будут отправляться аналитические данные.
@@ -38,11 +39,11 @@ SDK поставляется через SPM, для добавления в св
 
 Пример инициализации ресивера:
 ```swift
-let service = WildAnalyticsSDK()
+let service = WBASDK()
 
 let apiKey = "<PUT API KEY HERE>"
 
-let reciever1 = WildAnalyticsReceiver(
+let reciever1 = WBAReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     loggingOptions: loggingOptions,
@@ -51,7 +52,7 @@ let reciever1 = WildAnalyticsReceiver(
 )
 reciever1.setup() // Важно сетапить перед использованием
 
-let reciever2 = WildAnalyticsReceiver(
+let reciever2 = WBAReceiver(
     apiKey: "TestKey",
     isFirstLaunch: isFirstLaunch,
     loggingOptions: LoggingOptions.default,
@@ -75,7 +76,7 @@ SDK самостоятельно читает рекламный идентиф�
 Поведение настраивается через `IDFAConfig`:
 
 ```swift
-let reciever = WildAnalyticsReceiver(
+let reciever = WBAReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     loggingOptions: loggingOptions,
@@ -171,7 +172,7 @@ SDK поддерживает возможность получения атри�
 
 
 ```swift
-let reciever1 = WildAnalyticsReceiver(
+let reciever1 = WBAReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     enableAttributionTracking: true,
@@ -185,7 +186,7 @@ let reciever1 = WildAnalyticsReceiver(
 Структура делегата:
 
 ```swift
-public protocol WildAnalyticsDelegateProtocol: AnyObject {
+public protocol WBADelegateProtocol: AnyObject {
 
     /// Called when WB Tracker found an attributed deeplink that can be handled by the client
     /// - Parameter link: URL

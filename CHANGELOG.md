@@ -15,10 +15,14 @@
 - Событие `application_start`: исправлена доставка, убран дубль на холодном старте, добавлен параметр `processor_name`
 - Событие `dynamic_link_app_open`: добавлен параметр `referrerURL` и публичный метод `trackLaunchURL`
 
-## [v4.1.0](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/tags/4.1.0)
+## [v5.0.0](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/tags/5.0.0)
 
+- Пакет `WildAnalyticsSDK` переименован в `WBASDK`: имя SPM-продукта/таргета, podspec, module name, импорт (`import WBASDK`), названия папок, файлов, схем Xcode и bundle identifiers. Публичный класс-точка входа `WildAnalyticsSDK` → `WBASDK`.
+- Публичные типы переименованы: `WildAnalyticsReceiver` → `WBAReceiver`, `WildAnalyticsDelegateProtocol` → `WBADelegateProtocol`, `WildNetworkType` → `WBANetworkType`.
+- Изменился runtime-идентификатор ресивера: `ru.wildanalytics.receiver_wildanalyticsreceiver` → `ru.wba.receiver_wbareceiver` (если строка хардкодилась — заменить).
+- Гайд по миграции: [docs/MigrationGuide_5.0.0.md](docs/MigrationGuide_5.0.0.md).
 - `session_value` в событиях отправляется числом, а не строкой. Публичный API сменил тип: `setSessionValue(_ value: UInt64?)` и `setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void)` вместо `String?`. Значение сессии стало общим для всех инстансов SDK в приложении, включая копии SDK, слинкованные в разные модули; обработчик `setOnSessionValueUpdated` хранится для каждого инстанса отдельно.
-- `WildAnalyticsSDK` и ресиверы стали потокобезопасными и соответствуют `Sendable`.
+- `WBASDK` и ресиверы стали потокобезопасными и соответствуют `Sendable`.
 - `meta.locale`: язык и регион ОС в формате BCP-47 (`en-US`) вместо одного кода языка приложения.
 - `UserEngagement.scaleFactor`: тип `CGFloat?` вместо `String?`, в событии отправляется числом.
 - `BatchConfig`: добавлен публичный инициализатор со всеми параметрами.

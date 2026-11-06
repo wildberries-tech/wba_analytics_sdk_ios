@@ -8,13 +8,13 @@ use_frameworks!
 use_modular_headers!
 
 target 'YourAppTarget' do
-  # WildAnalyticsSDK - Full library
-  pod 'WildAnalyticsSDK', '~> 4.1.0'
+  # WBASDK - Full library
+  pod 'WBASDK', '~> 5.0.0'
 
   target 'YourAppTargetTests' do
     inherit! :search_paths
     # Pods for testing
-    pod 'WildAnalyticsSDK/Tests', '~> 4.1.0'
+    pod 'WBASDK/Tests', '~> 5.0.0'
   end
 
   target 'YourAppTargetUITests' do

@@ -7,4 +7,4 @@ if [[ $? != 0 ]]; then
     brew install xcodegen
 fi
 
-xcodegen generate --spec ${CURRENT_DIR}/WildAnalyticsSDK/WildAnalyticsSDK.yml
+xcodegen generate --spec ${CURRENT_DIR}/WBASDK/WBASDK.yml

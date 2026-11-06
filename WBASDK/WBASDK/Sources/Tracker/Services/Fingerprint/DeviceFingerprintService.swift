@@ -1,0 +1,142 @@
+// Copyright © 2025 WBA. All rights reserved.
+
+import Foundation
+import UIKit
+import SystemConfiguration
+import AdSupport
+
+/// Service for working with device fingerprint and attribution
+final class DeviceFingerprintService {
+    private let collector: DeviceFingerprintCollector
+    private let logger: CompositeLogger
+    private let attributionQueue = DispatchQueue(label: "ru.wba.deviceFingerprint.attribution")
+    private let storage: AttributionStorageProtocol
+    private let apiKey: String
+    private let session: URLSession
+
+    /// Private configuration parameters
+    private enum Configuration {
+        static let attributionURL = URL(string: "https://wildtracker.wb.ru/fingerprint/check")!
+    }
+
+    /// Service initialization
+    /// - Parameters:
+    ///   - apiKey: API Key
+    ///   - collector: Fingerprint collector (default is standard)
+    ///   - logger: Logger (default is empty)
+    ///   - storage: Attribution storage (default is UserDefaults)
+    ///   - sessionDelegate: Custom URLSessionDelegate for handling authentication challenges (e.g. SSL pinning).
+    ///   When provided, requests run on a dedicated session bound to this delegate; otherwise `URLSession.shared` is used.
+    init(
+        apiKey: String,
+        collector: DeviceFingerprintCollector = DeviceFingerprintCollector(),
+        logger: CompositeLogger = CompositeLogger(loggers: []),
+        storage: AttributionStorageProtocol = UserDefaultsAttributionStorage(),
+        sessionDelegate: URLSessionDelegate? = nil
+    ) {
+        self.apiKey = apiKey
+        self.collector = collector
+        self.logger = logger
+        self.storage = storage
+        if let sessionDelegate {
+            self.session = URLSession(configuration: .default, delegate: sessionDelegate, delegateQueue: nil)
+        } else {
+            self.session = .shared
+        }
+    }
+
+    /// Checks device attribution via fingerprint
+    /// - Parameter completion: Callback with AttributionResult or error
+    func checkAttribution(completion: @escaping (Result<AttributionResult?, Error>) -> Void) {
+        attributionQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            if self.storage.isAtrributionDidRequested() {
+                self.logger.info("DeviceFingerprintService", "Attribution already saved on disk, repeated request is not performed.")
+                DispatchQueue.main.async {
+                    completion(.success(nil))
+                }
+                return
+            }
+
+            let fingerprint = self.collector.collect()
+            self.logger.info("DeviceFingerprintService", "Fingerprint collected: \(fingerprint)")
+            self.sendAttributionRequest(fingerprint) { [weak self] result in
+                switch result {
+                case .success(let attributionData):
+                    if let attributionData {
+                        self?.storage.save(attributionData)
+                        if attributionData.isEmpty {
+                            self?.logger.info("DeviceFingerprintService", "Attribution not found, isEmpty == true")
+                        } else {
+                            self?.logger.info("DeviceFingerprintService", "Attribution successfully saved to disk.")
+                        }
+                    }
+                    let attributionResult = AttributionResult(
+                        fingerprintData: fingerprint,
+                        attributionData: attributionData
+                    )
+                    DispatchQueue.main.async {
+                        completion(.success(attributionResult))
+                    }
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }
+    }
+
+    /// Sends a request to the attribution server
+    /// - Parameters:
+    ///   - fingerprint: Fingerprint model
+    ///   - completion: Callback with result
+    private func sendAttributionRequest(_ fingerprint: DeviceFingerprint, completion: @escaping (Result<AttributionData?, Error>) -> Void) {
+        logger.debug("DeviceFingerprintService", "Sending request to \(Configuration.attributionURL)")
+        var request = URLRequest(url: Configuration.attributionURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue(apiKey, forHTTPHeaderField: "X-Api-Key")
+
+        do {
+            let data = try JSONEncoder().encode(fingerprint)
+            request.httpBody = data
+        } catch {
+            logger.error("DeviceFingerprintService", "Request encoding error: \(error)")
+            completion(.failure(error))
+            return
+        }
+
+        self.logger.debug("DeviceFingerprintService", "request: \(request.cURL(pretty: true))")
+        let task = session.dataTask(with: request) { data, response, error in
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 404 {
+                self.logger.debug("DeviceFingerprintService", "Fingerprint not found")
+                completion(.success(AttributionData.empty))
+                return
+            }
+
+            if let error = error {
+                self.logger.error("DeviceFingerprintService", "Network error: \(error)")
+                completion(.failure(error))
+                return
+            }
+
+            guard let data = data else {
+                self.logger.error("DeviceFingerprintService", "No data in server response")
+                completion(.failure(NSError(domain: "DeviceFingerprintService", code: 0, userInfo: [NSLocalizedDescriptionKey: "No data"])))
+                return
+            }
+
+            do {
+                let responseModel = try JSONDecoder().decode(AttributionData.self, from: data)
+                self.logger.info("DeviceFingerprintService", "Successful response: \(responseModel)")
+                completion(.success(responseModel))
+            } catch {
+                self.logger.error("DeviceFingerprintService", "Response decoding error: \(error)")
+                completion(.failure(error))
+            }
+        }
+        task.resume()
+    }
+}

@@ -1,10 +1,11 @@
-# WildAnalyticsSDK
+# WBASDK
 
 SDK for logging events in iOS applications. Events are sequentially grouped into batches and sent to the server. Configuration is supported for production and debug environments. The count of sent events and batches is tracked to control data loss. Events are stored in CoreData until they are sent. In case of network absence, events will be sent when the network becomes available.
 
-## 🧭 What's new in 4.1.0
+## 🧭 What's new in 5.0.0
 
-- **Thread safety and `Sendable`.** The public API (`WildAnalyticsSDK`, receivers) is now thread-safe and conforms to `Sendable`: registering and using receivers is safe from any thread.
+- **Renaming.** The `WildAnalyticsSDK` package is renamed to `WBASDK` (`import WBASDK`), public types now use the `WBA` prefix: `WBAReceiver`, `WBADelegateProtocol`, `WBANetworkType`. See [docs/MigrationGuide_5.0.0.md](docs/MigrationGuide_5.0.0.md).
+- **Thread safety and `Sendable`.** The public API (`WBASDK`, receivers) is now thread-safe and conforms to `Sendable`: registering and using receivers is safe from any thread.
 - **`session_value` is a number.** `setSessionValue(_ value: UInt64?)` and `setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void)` replace the `String?` variants. The session value is shared by all SDK instances in the app.
 - **`meta.locale`** now contains the OS language and region in BCP-47 form (e.g. `en-US`).
 - **`UserEngagement.scaleFactor`** is now `CGFloat?` instead of `String?` and is sent as a number.
@@ -15,19 +16,19 @@ SDK for logging events in iOS applications. Events are sequentially grouped into
 The SDK is distributed via SPM, to add it to your project simply add to your project:
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.1.0")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "5.0.0")
 ```
 
 ## 🚀 Launch in app
 
 The application assumes one analytics instance that can support multiple receivers.
 
-To create a WildAnalyticsReceiver instance, you need to pass several mandatory parameters to its initializer:
+To create a WBAReceiver instance, you need to pass several mandatory parameters to its initializer:
     
-- **environment:** Application environment, can be .production or .test, if needed you can set your own apiKey .custom("apiKey"). ([example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
+- **environment:** Application environment, can be .production or .test, if needed you can set your own apiKey .custom("apiKey"). ([example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WBASDK/WBASDKTestApp/AppDelegate.swift?ref_type%253Dheads#L31))
 - **analyticsURL:** URL to which analytics data will be sent.
 - **enableAutomaticEvents:** Set to `true` to automatically track installs, app launches and active time. If your product is a library meant for integration, keep it `false`. Automatic events work unreliably for integrated products. Optional, `false` by default. [Details](#-system-events)
-- **isFirstLaunch:** Flag indicating whether the current app launch is the first one. (stored somewhere in your code, for example in UserDefaults [example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WildAnalyticsSDK/WildAnalyticsSDKTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
+- **isFirstLaunch:** Flag indicating whether the current app launch is the first one. (stored somewhere in your code, for example in UserDefaults [example](https://github.com/wildberries-tech/wba_analytics_sdk_ios/-/blob/master/WBASDK/WBASDKTestApp/AppDelegate.swift?ref_type%253Dheads#L30))
 - **loggingOptions:** Logging settings, including logging level and file writing. [Details](.Docs/LoggingOptions.md)
 - **networkTypeProvider:** Object providing information about the current network type.
 - **batchConfig:** Batch data sending configuration.
@@ -36,11 +37,11 @@ For each receiver, you can set your own parameters and your own apiKey, then the
 
 Example receiver initialization:
 ```swift
-let service = WildAnalyticsSDK()
+let service = WBASDK()
 
 let apiKey = "<PUT API KEY HERE>"
 
-let reciever1 = WildAnalyticsReceiver(
+let reciever1 = WBAReceiver(
     apiKey: apiKey,
     isFirstLaunch: isFirstLaunch,
     loggingOptions: loggingOptions,
@@ -49,7 +50,7 @@ let reciever1 = WildAnalyticsReceiver(
 )
 reciever1.setup() // Important to setup before use
 
-let reciever2 = WildAnalyticsReceiver(
+let reciever2 = WBAReceiver(
     apiKey: "TestKey",
     isFirstLaunch: isFirstLaunch,
     loggingOptions: LoggingOptions.default,

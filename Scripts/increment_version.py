@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Version Increment Script for WildAnalyticsSDK
+Version Increment Script for WBASDK
 
 This script increments version numbers across all project files.
 Usage:
@@ -24,12 +24,12 @@ class VersionIncrementer:
     def __init__(self, project_root: Path):
         self.project_root = project_root
         self.files_to_update = [
-            "WildAnalyticsSDK.podspec",
+            "WBASDK.podspec",
             "Podfile.example", 
             "README.md",
-            "WildAnalyticsSDK/WildAnalyticsSDK/Sources/WBAnalytics/Models/Tag.swift",
-            "WildAnalyticsSDK/WildAnalyticsSDKTests/Batches/BatchProcessorImplTests.swift",
-            "WildAnalyticsSDK/WildAnalyticsSDKTests/Models/MetaTests.swift"
+            "WBASDK/WBASDK/Sources/WBAnalytics/Models/Tag.swift",
+            "WBASDK/WBASDKTests/Batches/BatchProcessorImplTests.swift",
+            "WBASDK/WBASDKTests/Models/MetaTests.swift"
         ]
         
     def parse_version(self, version_str: str) -> Tuple[int, int, int]:
@@ -59,7 +59,7 @@ class VersionIncrementer:
     
     def find_current_version(self) -> str:
         """Find current version from podspec file."""
-        podspec_path = self.project_root / "WildAnalyticsSDK.podspec"
+        podspec_path = self.project_root / "WBASDK.podspec"
         if not podspec_path.exists():
             raise FileNotFoundError(f"Podspec file not found: {podspec_path}")
             
@@ -83,7 +83,7 @@ class VersionIncrementer:
             # Podspec version
             (r'(spec\.version\s*=\s*["\'])(\d+\.\d+\.\d+)(["\'])', r'\g<1>' + new_version + r'\g<3>'),
             # Pod dependency versions
-            (r'(pod\s+["\']WildAnalyticsSDK[^"\']*["\'],\s*["\']~>\s*)(\d+\.\d+\.\d+)(["\'])', r'\g<1>' + new_version + r'\g<3>'),
+            (r'(pod\s+["\']WBASDK[^"\']*["\'],\s*["\']~>\s*)(\d+\.\d+\.\d+)(["\'])', r'\g<1>' + new_version + r'\g<3>'),
             # SPM exact version
             (r'(exact:\s*["\'])(\d+\.\d+\.\d+)(["\'])', r'\g<1>' + new_version + r'\g<3>'),
             # Swift static let version
@@ -156,7 +156,7 @@ class VersionIncrementer:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Increment version numbers across WildAnalyticsSDK project files",
+        description="Increment version numbers across WBASDK project files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -185,8 +185,8 @@ Examples:
     project_root = Path.cwd()
     
     # Verify we're in the right directory
-    if not (project_root / "WildAnalyticsSDK.podspec").exists():
-        print("Error: WildAnalyticsSDK.podspec not found. Please run this script from the project root.")
+    if not (project_root / "WBASDK.podspec").exists():
+        print("Error: WBASDK.podspec not found. Please run this script from the project root.")
         sys.exit(1)
     
     incrementer = VersionIncrementer(project_root)

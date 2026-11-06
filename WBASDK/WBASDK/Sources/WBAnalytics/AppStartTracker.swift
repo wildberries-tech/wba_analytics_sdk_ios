@@ -1,0 +1,193 @@
+//
+//  Copyright © 2026 WBA. All rights reserved.
+//
+
+import UIKit
+
+protocol AppStartTrackerProtocol {
+    func setup(with closure: @escaping AppStartTracker.TrackEventClosure)
+}
+
+/// Source of the application state. UIApplication.shared may only be accessed from the main
+/// thread, so the value is captured once — when AppStartTracker is created, on the caller's thread.
+/// This assumes the SDK is initialized from the main thread, in application(_:didFinishLaunchingWithOptions:).
+protocol ApplicationStateProviding {
+    var applicationState: UIApplication.State { get }
+}
+
+struct SystemApplicationStateProvider: ApplicationStateProviding {
+    var applicationState: UIApplication.State {
+        UIApplication.shared.applicationState
+    }
+}
+
+final class AppStartTracker {
+    typealias TrackEventClosure = (AppStartTracker.Input) -> Void
+
+    // MARK: - Properties
+
+    private let notificationCenter: NotificationCenter
+    private let dispatcher: Dispatcher
+
+    private var trackEventClosure: TrackEventClosure?
+    // Captured synchronously in init, not in trackLaunchIfNeeded: AppStartTracker is created on
+    // the caller's thread inside WBAnalytics.setup(...) (typically main, during didFinishLaunching),
+    // i.e. before EventsProcessorImpl hops onto its own queue and the app has a chance to become
+    // .active. Reading the state later (after that queue hop) almost always yields .active -> unknown
+    // instead of the correct foreground for a normal cold start.
+    private var startLocation: StartLocation
+    private var hasTrackedLaunch = false
+    private var wasInBackground = false
+
+    // MARK: - Init
+
+    init(
+        notificationCenter: NotificationCenter = .default,
+        dispatcher: Dispatcher = DispatchQueue.main,
+        applicationStateProvider: ApplicationStateProviding = SystemApplicationStateProvider()
+    ) {
+        self.notificationCenter = notificationCenter
+        self.dispatcher = dispatcher
+        // .active means the SDK was initialized after app launch, not during it,
+        // so the launch source can't be determined
+        self.startLocation = applicationStateProvider.applicationState == .active
+            ? .unknown
+            : .foreground
+
+        subscribeForNotifications()
+    }
+
+    // MARK: - Deinit
+
+    deinit {
+        notificationCenter.removeObserver(self)
+    }
+}
+
+// MARK: - AppStartTrackerProtocol
+
+extension AppStartTracker: AppStartTrackerProtocol {
+    /// Called from EventsProcessorImpl.setup, i.e. at app launch.
+    /// The event is sent from here rather than from didFinishLaunchingNotification: by this point
+    /// the send closure is already set, so the event isn't lost.
+    func setup(with closure: @escaping TrackEventClosure) {
+        trackEventClosure = closure
+        trackLaunchIfNeeded()
+    }
+}
+
+// MARK: - Input
+
+extension AppStartTracker {
+    struct Input {
+        let name: String
+        let parameters: [String: Any]?
+    }
+}
+
+// MARK: - Private
+
+private extension AppStartTracker {
+    enum StartLocation: String {
+        case background
+        case foreground
+        case unknown
+    }
+
+    enum Event {
+        static let appStart = "application_start"
+    }
+
+    enum Parameter {
+        static let startLocation = "start_location"
+        static let cpu = "cpu"
+        static let ram = "ram"
+        static let processorName = "processor_name"
+    }
+}
+
+private extension AppStartTracker {
+    func subscribeForNotifications() {
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(willEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(didEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+    }
+
+    func trackLaunchIfNeeded() {
+        guard !hasTrackedLaunch else { return }
+        hasTrackedLaunch = true
+
+        dispatcher.async { [weak self] in
+            self?.trackEvent()
+        }
+    }
+
+    @objc func willEnterForeground() {
+        // Skip the first foreground of a cold start: the event was already sent from setup
+        guard wasInBackground else { return }
+        wasInBackground = false
+        startLocation = .background
+
+        // The delay exists because AppStartTracker's willEnterForeground fires before
+        // SessionValueManager's, which would otherwise attach a stale sessionValue to application_start
+        dispatcher.asyncAfter(deadline: .now() + Constants.trackDelay, qos: .unspecified, flags: []) { [weak self] in
+            self?.trackEvent()
+        }
+    }
+
+    @objc func didEnterBackground() {
+        wasInBackground = true
+    }
+
+    func trackEvent() {
+        let version = Version(modelID: DeviceInfo.modelID)
+        let parameters: [String: Any]? = [
+            Parameter.cpu: Self.roundedFrequency(version.frequency),
+            Parameter.ram: Int(round(Double(ProcessInfo.processInfo.physicalMemory) / Constants.bytesInGb)),
+            Parameter.startLocation: startLocation.rawValue,
+            Parameter.processorName: version.cpu.name
+        ]
+
+        let input = Input(name: Event.appStart, parameters: parameters)
+
+        trackEventClosure?(input)
+    }
+}
+
+// MARK: - Constants
+
+private extension AppStartTracker {
+    enum Constants {
+        static let trackDelay: DispatchTimeInterval = .milliseconds(500)
+        static let bytesInGb = 1024.0 * 1024.0 * 1024.0
+        static let frequencyFractionScale = 100.0
+    }
+}
+
+// MARK: - Frequency rounding
+
+extension AppStartTracker {
+    /// The clock frequency is sent in the event rounded to hundredths: in the frequency table
+    /// some of the older processors have three decimal places, while the event schema expects two.
+    /// The result is an NSDecimalNumber rather than a Double on purpose. A value such as 2.65
+    /// is not representable in binary floating point, and JSONSerialization prints such a Double
+    /// with all 17 significant digits: `2.6499999999999999`. A decimal built from an integer
+    /// number of hundredths is exact in base-10 and serializes as `2.65`.
+    ///
+    /// Not private so that the rule can be covered by a test on specific values — the frequency
+    /// of the device a test run happens on does not necessarily have three decimals
+    static func roundedFrequency(_ frequency: Double) -> NSDecimalNumber {
+        let hundredths = (frequency * Constants.frequencyFractionScale).rounded()
+        return NSDecimalNumber(decimal: Decimal(Int(hundredths)) / Decimal(Int(Constants.frequencyFractionScale)))
+    }
+}

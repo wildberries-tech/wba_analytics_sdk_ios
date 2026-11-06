@@ -4,5 +4,5 @@
 
 import Foundation
 enum TagVersion {
-    static let version: String = "5.0.0"
+    static let version: String = "5.0.1"
 }

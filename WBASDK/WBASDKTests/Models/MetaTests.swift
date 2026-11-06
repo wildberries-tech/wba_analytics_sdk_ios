@@ -128,7 +128,7 @@ private extension MetaTests {
         static let systemVersion: String = "17.2"
         static let appID: String = "com.apple.dt.xctest.tool"
         static let appVersion: String = "16.0"
-        static let analyticsSDKVersion: String = "5.0.0"
+        static let analyticsSDKVersion: String = "5.0.1"
         static let deviceType: String = "computer"
         static let manufacturer: String = "Apple"
         static let model: String = "arm64"

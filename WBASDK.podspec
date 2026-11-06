@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name                     = "WBASDK"
-  spec.version                  = "5.0.0"
+  spec.version                  = "5.0.1"
   spec.summary                  = "SDK for logging events"
   spec.description              = "SDK for logging events"
 

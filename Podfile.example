@@ -9,12 +9,12 @@ use_modular_headers!
 
 target 'YourAppTarget' do
   # WBASDK - Full library
-  pod 'WBASDK', '~> 5.0.0'
+  pod 'WBASDK', '~> 5.0.1'
 
   target 'YourAppTargetTests' do
     inherit! :search_paths
     # Pods for testing
-    pod 'WBASDK/Tests', '~> 5.0.0'
+    pod 'WBASDK/Tests', '~> 5.0.1'
   end
 
   target 'YourAppTargetUITests' do

@@ -119,13 +119,20 @@ extension WildAnalyticsReceiver: AnalyticsReceiver {
     }
 
     /// Sets a unique session value
-    public func setSessionValue(_ value: String?) {
+    public func setSessionValue(_ value: UInt64?) {
         analyticsInstance?.setSessionValue(value)
     }
 
     /// Set a handler called when session value updates
-    public func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
-        analyticsInstance?.setOnSessionValueUpdated(handler)
+    public func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void) {
+        setOnSessionValueUpdated(handler, for: self)
+    }
+
+    /// The session value is shared by all receivers, so a handler set through
+    /// `WildAnalyticsSDK` is registered on behalf of the facade — otherwise the same handler
+    /// would end up in every receiver and be called once for each of them.
+    func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void, for owner: AnyObject) {
+        analyticsInstance?.setOnSessionValueUpdated(handler, for: owner)
     }
 
     /// Sets common parameters for the analytics.

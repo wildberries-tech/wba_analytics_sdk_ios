@@ -3,16 +3,33 @@
 import Foundation
 import UIKit
 
-public final class WildAnalyticsSDK {
+/// Thread-safe dispatcher of analytics receivers:
+/// its state is guarded by an internal lock, and receiver methods are called outside of it.
+public final class WildAnalyticsSDK: Sendable {
 
     // MARK: - Properties
-    private var receivers: [String: AnalyticsReceiver]
-    private var receiversSetupStatuses: [String: Bool]
+    private let lock = NSLock()
+    private nonisolated(unsafe) var receivers: [String: AnalyticsReceiver]
+    private nonisolated(unsafe) var receiversSetupStatuses: [String: Bool]
+    /// Session value handlers are registered on behalf of this object: the value is shared
+    /// by all receivers, so a handler set through the facade must be called
+    /// once, not once per registered receiver.
+    /// Used only as an identity key, so `nonisolated(unsafe)` is safe
+    private nonisolated(unsafe) let sessionValueHandlerOwner = NSObject()
 
     // MARK: - Private methods
-    private func addReceiver(_ receiver: AnalyticsReceiver) {
-        receivers[receiver.identifier] = receiver
-        receiversSetupStatuses[receiver.identifier] = false
+    private func snapshotReceivers() -> [String: AnalyticsReceiver] {
+        lock.lock()
+        defer { lock.unlock() }
+        return receivers
+    }
+
+    private func snapshotUnsetupReceivers() -> [AnalyticsReceiver] {
+        lock.lock()
+        defer { lock.unlock() }
+        return receiversSetupStatuses.compactMap { identifier, status in
+            status ? nil : receivers[identifier]
+        }
     }
 
     public init() {
@@ -22,20 +39,22 @@ public final class WildAnalyticsSDK {
 
     // MARK: - Public methods
     public func registerReceiver(_ receiver: AnalyticsReceiver) {
-        addReceiver(receiver)
+        lock.lock()
+        defer { lock.unlock() }
+        receivers[receiver.identifier] = receiver
+        receiversSetupStatuses[receiver.identifier] = false
     }
 
     public func setupReceiversIfPossible() {
-        for (identifier, status) in receiversSetupStatuses where !status {
-            receivers[identifier]?.setup()
-        }
+        let pendingReceivers = snapshotUnsetupReceivers()
+        pendingReceivers.forEach { $0.setup() }
     }
 
     public func setCommonParameters(
         _ parameters: [String: Any],
         receiverIdentifier: String
     ) {
-        receivers[receiverIdentifier]?.setCommonParameters(parameters)
+        snapshotReceivers()[receiverIdentifier]?.setCommonParameters(parameters)
     }
 
     public func trackEvent(
@@ -43,7 +62,7 @@ public final class WildAnalyticsSDK {
         parameters: [String: Any]?,
         receiverIdentifier: String
     ) {
-        receivers[receiverIdentifier]?.trackEvent(name: name, parameters: parameters)
+        snapshotReceivers()[receiverIdentifier]?.trackEvent(name: name, parameters: parameters)
     }
 
     public func trackEvent<P>(
@@ -51,7 +70,7 @@ public final class WildAnalyticsSDK {
         parameters: [P]?,
         receiverIdentifier: String
     ) where P: Encodable {
-        receivers[receiverIdentifier]?.trackEvent(name: name, parameters: parameters)
+        snapshotReceivers()[receiverIdentifier]?.trackEvent(name: name, parameters: parameters)
     }
 
     public func trackEventWithCompletion(
@@ -60,13 +79,14 @@ public final class WildAnalyticsSDK {
         receiverIdentifier: String,
         completion: @escaping (_ successfully: Bool) -> Void
     ) throws {
-        guard let receiver = receivers[receiverIdentifier] as? AnalyticsCompletionReceiver else {
+        let receiver = snapshotReceivers()[receiverIdentifier]
+        guard let completionReceiver = receiver as? AnalyticsCompletionReceiver else {
             throw AnalyticsError
                 .invalidReceiverType(
                     "Receiver with identifier \(receiverIdentifier) is not an AnalyticsCompletionReceiver"
                 )
         }
-        receiver.trackEventWithCompletion(
+        completionReceiver.trackEventWithCompletion(
             name: name,
             parameters: parameters,
             completion: completion
@@ -78,7 +98,7 @@ public final class WildAnalyticsSDK {
         parameters: [String: Any]?,
         completion: @escaping (_ successfully: Bool) -> Void
     ) throws {
-        let totalReceivers = receivers.values.compactMap { $0 as? AnalyticsCompletionReceiver }
+        let totalReceivers = snapshotReceivers().values.compactMap { $0 as? AnalyticsCompletionReceiver }
 
         if totalReceivers.isEmpty {
             throw AnalyticsError.noCompletionReceiversAvailable
@@ -94,53 +114,58 @@ public final class WildAnalyticsSDK {
     }
 
     public func trackEvent(name: String, parameters: [String: Any]?) {
-        receivers.values.forEach {
+        snapshotReceivers().values.forEach {
             $0.trackEvent(name: name, parameters: parameters)
         }
     }
 
     /// Sends the dynamic_link_app_open event to all registered receivers
     public func trackLaunchURL(_ url: URL, referrerURL: URL? = nil) {
-        receivers.values.forEach {
+        snapshotReceivers().values.forEach {
             $0.trackLaunchURL(url, referrerURL: referrerURL)
         }
     }
 
     /// Sends the dynamic_link_app_open event to a specific receiver
     public func trackLaunchURL(_ url: URL, referrerURL: URL? = nil, receiverIdentifier: String) {
-        receivers[receiverIdentifier]?.trackLaunchURL(url, referrerURL: referrerURL)
+        snapshotReceivers()[receiverIdentifier]?.trackLaunchURL(url, referrerURL: referrerURL)
     }
 
     public func trackUserEngagement(_ userEngagement: UserEngagement, receiverIdentifier: String) {
-        receivers[receiverIdentifier]?.trackUserEngagement(userEngagement)
+        snapshotReceivers()[receiverIdentifier]?.trackUserEngagement(userEngagement)
     }
 
     public func setUserToken(_ token: String?) {
-        receivers.values.forEach {
+        snapshotReceivers().values.forEach {
             $0.setUserToken(token)
         }
     }
 
     public func setCustomHeader(key: String, value: String) {
-        receivers.values.forEach {
+        snapshotReceivers().values.forEach {
             $0.setCustomHeader(key: key, value: value)
         }
     }
 
     public func setCustomHeaders(_ headers: [String: String]) {
-        receivers.values.forEach {
+        snapshotReceivers().values.forEach {
             $0.setCustomHeaders(headers)
         }
     }
 
-    public func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
-        receivers.values.forEach {
-            $0.setOnSessionValueUpdated(handler)
+    public func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void) {
+        snapshotReceivers().values.forEach {
+            guard let receiver = $0 as? WildAnalyticsReceiver else {
+                // Third-party AnalyticsReceiver implementations manage their own session value
+                $0.setOnSessionValueUpdated(handler)
+                return
+            }
+            receiver.setOnSessionValueUpdated(handler, for: sessionValueHandlerOwner)
         }
     }
 
     public func showLogsViewController() -> UIViewController {
-        ReceiversListViewController(receivers: receivers)
+        ReceiversListViewController(receivers: snapshotReceivers())
     }
 }
 

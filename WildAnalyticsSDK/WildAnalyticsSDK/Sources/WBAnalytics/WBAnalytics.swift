@@ -145,13 +145,13 @@ public class WBAnalytics {
     }
 
     /// Sets a unique session value
-    public func setSessionValue(_ value: String?) {
+    public func setSessionValue(_ value: UInt64?) {
         processor.setSessionValue(value)
     }
 
     /// Set a handler called when session value updates
-    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
-        processor.setOnSessionValueUpdated(handler)
+    func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void, for owner: AnyObject) {
+        processor.setOnSessionValueUpdated(handler, for: owner)
     }
 
     /// This function is used to set common parameters for the analytics.

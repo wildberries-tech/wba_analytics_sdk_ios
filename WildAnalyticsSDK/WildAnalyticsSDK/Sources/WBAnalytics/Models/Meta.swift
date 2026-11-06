@@ -13,6 +13,7 @@ extension Meta {
     ///   - networkType: The type of network connection.
     ///   - deviceId: The unique device identifier.
     ///   - idfa: The unique advertising identifier.
+    ///   - locale: Language and region of the operating system in BCP-47 form, e.g. `en-US`.
     ///   - isNewUser: A boolean indicating whether the user is new.
     ///   - enableAutomaticEvents: Whether the SDK sends its automatic events (`first_open`,
     ///     `application_start`, `heartbeat`) for this integrator.
@@ -21,11 +22,11 @@ extension Meta {
         networkType: WildNetworkType,
         deviceId: String,
         idfa: String,
+        locale: String,
         isNewUser: Bool,
         enableAutomaticEvents: Bool,
         localDate: Date = Date()
     ) {
-        let locale = Locale.current.languageCode ?? ""
         let sdkVersion = (Bundle.main.infoDictionary?["DTPlatformVersion"] as? String) ?? ""
         let product = UIDevice.current.systemName
         let osBuild = UIDevice.current.systemVersion

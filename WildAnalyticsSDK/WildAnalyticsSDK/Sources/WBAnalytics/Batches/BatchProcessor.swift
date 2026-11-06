@@ -35,8 +35,22 @@ final class BatchProcessorImpl: BatchProcessor {
     private var queue: Dispatcher?
     private var batchWorker: BatchWorker?
     private var storage: Storage
-    private var deviceId: String?
+    private let deviceIdLock = NSLock()
+    private var _deviceId: String?
+    private var deviceId: String? {
+        get {
+            deviceIdLock.lock()
+            defer { deviceIdLock.unlock() }
+            return _deviceId
+        }
+        set {
+            deviceIdLock.lock()
+            defer { deviceIdLock.unlock() }
+            _deviceId = newValue
+        }
+    }
     private var idfaProvider: IDFAProvider = SystemIDFAProvider(isDisabled: false)
+    private let systemLocaleProvider: SystemLocaleProviding
     // default value
     private var batches: [BatchModel] = []
     private var isNewLaunch = false
@@ -58,13 +72,15 @@ final class BatchProcessorImpl: BatchProcessor {
         storage: Storage,
         userDefaultsStorage: UserDefaultsStorage,
         batchSender: BatchSender? = nil,
-        jsonSerializer: JSONSerialization.Type = JSONSerialization.self
+        jsonSerializer: JSONSerialization.Type = JSONSerialization.self,
+        systemLocaleProvider: SystemLocaleProviding? = nil
     ) {
         self.logger = logger
         self.storage = storage
         self.userDefaultsStorage = userDefaultsStorage
         self.batchSender = batchSender
         self.jsonSerializer = jsonSerializer
+        self.systemLocaleProvider = systemLocaleProvider ?? SystemLocaleProvider(logger: logger)
     }
 
     func setup(
@@ -286,6 +302,7 @@ final class BatchProcessorImpl: BatchProcessor {
             networkType: networkType,
             deviceId: deviceId ?? WBAnalytics.deviceId,
             idfa: idfaProvider.currentIDFA(),
+            locale: systemLocaleProvider.systemLocaleTag,
             isNewUser: isNewLaunch,
             enableAutomaticEvents: enableAutomaticEvents
         )

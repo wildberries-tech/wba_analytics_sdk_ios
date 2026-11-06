@@ -6,26 +6,29 @@ import Foundation
 @testable import WildAnalyticsSDK
 
 final class SessionValueManagerMock: SessionValueManagerProtocol {
-    private var _sessionValue: String = "1234567890123456789"
+    private var _sessionValue: UInt64 = 1_234_567_890_123_456_789
 
-    var sessionValue: String {
+    var sessionValue: UInt64 {
         get { _sessionValue }
         set { _sessionValue = newValue }
     }
 
-    private(set) var setSessionValueReceivedValue: String?
+    private(set) var setSessionValueReceivedValue: UInt64?
     private(set) var setSessionValueWasCalled: Int = 0
 
-    func setSessionValue(_ value: String?) {
+    func setSessionValue(_ value: UInt64?) {
         setSessionValueReceivedValue = value
         setSessionValueWasCalled += 1
     }
 
-    private(set) var setOnSessionValueUpdatedReceivedValue: ((String?) -> Void)?
+    private(set) var setOnSessionValueUpdatedReceivedValue: ((UInt64?) -> Void)?
     private(set) var setOnSessionValueUpdatedWasCalled: Int = 0
 
-    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+    private(set) weak var setOnSessionValueUpdatedReceivedOwner: AnyObject?
+
+    func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void, for owner: AnyObject) {
         setOnSessionValueUpdatedReceivedValue = handler
+        setOnSessionValueUpdatedReceivedOwner = owner
         setOnSessionValueUpdatedWasCalled += 1
     }
 }

@@ -317,7 +317,7 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual(firstOpenTrackerMock.trackIfNeededReceivedApiKey, TestData.apiKey)
         XCTAssertEqual(mirror.events.first?["event_num"] as? Int, 0)
         XCTAssertEqual(mirror.events.first?["name"] as? String, "first_open")
-        XCTAssertEqual(mirror.events.first?["session_value"] as? String, TestData.sessionValue)
+        XCTAssertEqual(mirror.events.first?["session_value"] as? UInt64, TestData.sessionValue)
         XCTAssertEqual((mirror.events.first?["data"] as? [String: Any])?.isEmpty, true)
     }
 
@@ -724,7 +724,7 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["event_num"] as? Int, 0)
 //        XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["event_time"] as? String, timeString)
         XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["name"] as? String, "event")
-        XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["session_value"] as? String, TestData.sessionValue)
+        XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["session_value"] as? UInt64, TestData.sessionValue)
         XCTAssertEqual(batchProcessorMock.sendEventSyncReceivedValue?.event["data"] as? [String: Int], TestData.parameters)
     }
 
@@ -756,7 +756,7 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertNotNil(event)
         XCTAssertEqual(event?["event_num"] as? Int, 0)
         XCTAssertEqual(event?["name"] as? String, "event")
-        XCTAssertEqual(event?["session_value"] as? String, TestData.sessionValue)
+        XCTAssertEqual(event?["session_value"] as? UInt64, TestData.sessionValue)
         XCTAssertEqual((event?["data"] as? [String: Int]), TestData.parametersFull)
     }
 
@@ -1037,7 +1037,7 @@ final class EventsProcessorImplTests: XCTestCase {
         XCTAssertEqual((event?["data"] as? [String: Any])?["screen_name"] as? String, TestData.eventString)
         XCTAssertEqual((event?["data"] as? [String: Any])?["text_size"] as? Int, 2)
         XCTAssertEqual((event?["data"] as? [String: Any])?["auth_type"] as? String, "noAuth")
-        XCTAssertEqual((event?["data"] as? [String: Any])?["scale_factor"] as? String, "scaleFactor")
+        XCTAssertEqual((event?["data"] as? [String: Any])?["scale_factor"] as? Double, 1.5)
     }
 
     func testDidUserEngagementTrackerFireWithoutScaleFactor() {
@@ -1073,6 +1073,7 @@ final class EventsProcessorImplTests: XCTestCase {
     func testSetDeviceId() {
         // when
         processor.setDeviceId(TestData.deviceId)
+        sleep(milliseconds: 100)
         // then
         XCTAssertEqual(batchProcessorMock.setDeviceIdWasCalled, 1)
         XCTAssertEqual(batchProcessorMock.setDeviceReceivedArguments, TestData.deviceId)
@@ -1082,9 +1083,9 @@ final class EventsProcessorImplTests: XCTestCase {
 
     func testSetSessionValue() {
         // given
-        let newValue = "12345"
+        let newValue: UInt64 = 12345
         // when
-        sessionValueManagerMock.setSessionValue(newValue)
+        processor.setSessionValue(newValue)
         // then
         XCTAssertEqual(sessionValueManagerMock.setSessionValueWasCalled, 1)
         XCTAssertEqual(sessionValueManagerMock.setSessionValueReceivedValue, newValue)
@@ -1094,12 +1095,14 @@ final class EventsProcessorImplTests: XCTestCase {
 
     func testSetOnSessionValueUpdated() {
         // given
-        let handler: (String?) -> Void = { _ in }
+        let handler: (UInt64?) -> Void = { _ in }
+        let owner = NSObject()
         // when
-        sessionValueManagerMock.setOnSessionValueUpdated(handler)
+        processor.setOnSessionValueUpdated(handler, for: owner)
         // then
         XCTAssertNotNil(sessionValueManagerMock.setOnSessionValueUpdatedReceivedValue)
         XCTAssertEqual(sessionValueManagerMock.setOnSessionValueUpdatedWasCalled, 1)
+        XCTAssertIdentical(sessionValueManagerMock.setOnSessionValueUpdatedReceivedOwner, owner)
     }
 
     // MARK: setCustomHeader
@@ -1280,7 +1283,7 @@ private extension EventsProcessorImplTests {
             screenName: "event",
             textSize: .small,
             authType: "noAuth",
-            scaleFactor: "scaleFactor"
+            scaleFactor: 1.5
         )
         static let userEngagementWithoutScaleFactor = UserEngagement(
             screenName: "event",
@@ -1301,7 +1304,7 @@ private extension EventsProcessorImplTests {
         static let logLabel = "EventsProcessor"
         static let analyticsQueueName = "WBAnalytics"
         static let newLaunchKey = "WildAnalyticsSDK-isNewLaunch"
-        static let sessionValue = "1587023248356386046"
+        static let sessionValue: UInt64 = 1_587_023_248_356_386_046
         static let appStartEventName = "application_start"
         static let appStartEventParameters: [String: Double] = ["ram": 64, "cpu": 4.61]
         static let idfa = "01234567-1234-1234-1234-123456789012"

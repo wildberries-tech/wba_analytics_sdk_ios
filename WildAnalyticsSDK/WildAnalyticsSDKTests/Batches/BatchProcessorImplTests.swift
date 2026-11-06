@@ -21,6 +21,7 @@ final class BatchProcessorImplTests: XCTestCase {
     private var networkProviderMock: NetworkTypeProviderMock!
     private var dispatchMock: DispatcherMock!
     private var jsonSerializerMock: JSONSerializationMock.Type!
+    private var systemLocaleProviderMock: SystemLocaleProviderMock!
 
     override func setUp() {
         super.setUp()
@@ -34,12 +35,15 @@ final class BatchProcessorImplTests: XCTestCase {
         dispatchMock = .init()
         networkProviderMock = .init()
         userStorageMock = .init()
+        systemLocaleProviderMock = .init()
+        systemLocaleProviderMock.systemLocaleTagStub = TestData.locale
         batchProcessor = BatchProcessorImpl(
             logger: loggerMock,
             storage: storageMock,
             userDefaultsStorage: userStorageMock,
             batchSender: batchSenderMock,
-            jsonSerializer: jsonSerializerMock
+            jsonSerializer: jsonSerializerMock,
+            systemLocaleProvider: systemLocaleProviderMock
         )
         networkProviderMock.getCurrentNetworkTypeStub = .cellular2G
         jsonSerializerMock.dataStub = TestData.data
@@ -543,11 +547,7 @@ final class BatchProcessorImplTests: XCTestCase {
         XCTAssertEqual(meta?["tz_offset"] as? String, timeZoneOffset)
         XCTAssertEqual(meta?["is_new_user"] as? Int, 0)
         XCTAssertEqual(meta?["app_version"] as? String, TestData.appVersion)
-        if #available(iOS 16, *) {
-            XCTAssertEqual(meta?["locale"] as? String, Locale.current.language.languageCode?.identifier)
-        } else {
-            XCTAssertEqual(meta?["locale"] as? String, Locale.current.languageCode)
-        }
+        XCTAssertEqual(meta?["locale"] as? String, TestData.locale)
         XCTAssertEqual(meta?["mobile_device_type"] as? String, "computer")
         XCTAssertEqual(meta?["timezone"] as? String, TimeZone.current.identifier)
         XCTAssertEqual(meta?["analytics_sdk_version"] as? String, TestData.analyticsSdkVersion)
@@ -751,9 +751,10 @@ private extension BatchProcessorImplTests {
         #endif
         static let appId = "com.apple.dt.xctest.tool"
         static let appVersion = "16.0"
+        static let locale = "en-US"
         static let model = "arm64"
         static let manufacturer = "Apple"
-        static let analyticsSdkVersion = "4.0.4"
+        static let analyticsSdkVersion = "4.1.0"
         static let validIDFA = "01234567-1234-1234-1234-123456789012"
         static let invalidIDFA = "00000000-0000-0000-0000-000000000000"
     }
@@ -786,7 +787,9 @@ private extension BatchProcessorImplTests {
         var state: BatchProcessorImpl.BatchProcessingState { extract() }
 
         var isNewLaunch: Bool { extract() }
-        var deviceId: String? { extract() }
+        // deviceId in BatchProcessorImpl is a computed property guarded by NSLock;
+        // Mirror only sees stored properties, so read the backing storage
+        var deviceId: String? { extract(variableName: "_deviceId") }
         var idfaProvider: IDFAProvider? { extract() }
         var isSending: Bool { extract() }
         var isExecutingInBackground: Bool { extract() }

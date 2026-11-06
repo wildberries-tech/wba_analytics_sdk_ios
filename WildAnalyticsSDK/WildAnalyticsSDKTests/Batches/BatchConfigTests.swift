@@ -35,6 +35,28 @@ final class BatchConfigTests: XCTestCase {
         )
     }
 
+    func testCustomInitBatchConfig() {
+        // given
+        let sendingDelay = 4.5
+        let size = 50
+        let sendingTimerTimeout = 15.0
+        let requestTimeout = 60.0
+
+        // when
+        let batchConfig = BatchConfig(
+            sendingDelay: sendingDelay,
+            size: size,
+            sendingTimerTimeout: sendingTimerTimeout,
+            requestTimeout: requestTimeout
+        )
+
+        // then
+        XCTAssertEqual(batchConfig.sendingDelay, sendingDelay)
+        XCTAssertEqual(batchConfig.size, size)
+        XCTAssertEqual(batchConfig.sendingTimerTimeout, sendingTimerTimeout)
+        XCTAssertEqual(batchConfig.requestTimeout, requestTimeout)
+    }
+
     func testDecodeBatchConfig() {
         // given
         let data = TestData.jsonString.data(using: .utf8)!

@@ -2,12 +2,20 @@
 
 SDK for logging events in iOS applications. Events are sequentially grouped into batches and sent to the server. Configuration is supported for production and debug environments. The count of sent events and batches is tracked to control data loss. Events are stored in CoreData until they are sent. In case of network absence, events will be sent when the network becomes available.
 
+## 🧭 What's new in 4.1.0
+
+- **Thread safety and `Sendable`.** The public API (`WildAnalyticsSDK`, receivers) is now thread-safe and conforms to `Sendable`: registering and using receivers is safe from any thread.
+- **`session_value` is a number.** `setSessionValue(_ value: UInt64?)` and `setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void)` replace the `String?` variants. The session value is shared by all SDK instances in the app.
+- **`meta.locale`** now contains the OS language and region in BCP-47 form (e.g. `en-US`).
+- **`UserEngagement.scaleFactor`** is now `CGFloat?` instead of `String?` and is sent as a number.
+- `BatchConfig` got a public memberwise initializer.
+
 ## ⬇️ Install
 
 The SDK is distributed via SPM, to add it to your project simply add to your project:
 
 ```
-.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "3.4.0")
+.package(url:"https://github.com/wildberries-tech/wba_analytics_sdk_ios.git",exact:  "4.1.0")
 ```
 
 ## 🚀 Launch in app

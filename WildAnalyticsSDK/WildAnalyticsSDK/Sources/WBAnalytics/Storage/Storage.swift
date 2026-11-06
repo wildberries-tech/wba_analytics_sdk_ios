@@ -45,7 +45,10 @@ final class StorageImpl: Storage {
                 options: []
             )
 
-            entity.data = String(decoding: jsonData, as: UTF8.self)
+            guard let json = String(data: jsonData, encoding: .utf8) else {
+                throw StorageErrors.invalidJSON
+            }
+            entity.data = json
         }
     }
 

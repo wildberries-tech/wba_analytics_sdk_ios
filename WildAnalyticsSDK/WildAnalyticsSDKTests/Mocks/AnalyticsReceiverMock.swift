@@ -82,18 +82,18 @@ final class AnalyticsReceiverMock: AnalyticsReceiver {
         setUserTokenReceivedValue = token
     }
 
-    private(set) var setSessionValueReceivedValue: String?
+    private(set) var setSessionValueReceivedValue: UInt64?
     private(set) var setSessionValueWasCalled: Int = 0
 
-    func setSessionValue(_ value: String?) {
+    func setSessionValue(_ value: UInt64?) {
         setSessionValueReceivedValue = value
         setSessionValueWasCalled += 1
     }
 
-    private(set) var setOnSessionValueUpdatedReceivedValue: ((String?) -> Void)?
+    private(set) var setOnSessionValueUpdatedReceivedValue: ((UInt64?) -> Void)?
     private(set) var setOnSessionValueUpdatedWasCalled: Int = 0
 
-    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
+    func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void) {
         setOnSessionValueUpdatedReceivedValue = handler
         setOnSessionValueUpdatedWasCalled += 1
     }

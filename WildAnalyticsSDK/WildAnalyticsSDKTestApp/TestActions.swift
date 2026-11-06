@@ -3,7 +3,13 @@ import WildAnalyticsSDK
 
 struct TestActions {
     static func addEvent() {
-        AppDelegate.shared.analytics1.trackUserEngagement(UserEngagement(screenName: "Screen_name", textSize: nil, authType: "noAuth"), receiverIdentifier: "")
+        let event = UserEngagement(
+            screenName: "Screen_name",
+            textSize: nil,
+            authType: "noAuth",
+            scaleFactor: 1.0
+        )
+        AppDelegate.shared.analytics1.trackUserEngagement(event, receiverIdentifier: "")
         AppDelegate.shared.analytics1.trackEvent(name: "add_to_cart_test", parameters: [
             "param1": "value1",
             "param2": "param2"

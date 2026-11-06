@@ -238,9 +238,9 @@ final class WildAnalyticsSDKTests: XCTestCase {
         receiver.identifierStub = TestData.receiverIdentifier
         let analytics = WildAnalyticsSDK()
         analytics.registerReceiver(receiver)
-        let handler: (String?) -> Void = { _ in }
+        let handler: (UInt64?) -> Void = { _ in }
         // when
-        receiver.setOnSessionValueUpdated(handler)
+        analytics.setOnSessionValueUpdated(handler)
         // then
         XCTAssertNotNil(receiver.setOnSessionValueUpdatedReceivedValue)
         XCTAssertEqual(receiver.setOnSessionValueUpdatedWasCalled, 1)
@@ -469,12 +469,12 @@ private extension WildAnalyticsSDKTests {
         static let parameters: [String: Int] = ["123": 2]
         static let receiverIdentifier: String = "receiverIdentifier"
         static let name: String = "name"
-        static let sessionValue = "1587023248356386046"
+        static let sessionValue: UInt64 = 1_587_023_248_356_386_046
         static let userEngagement = UserEngagement(
                     screenName: "name",
                     textSize: .large,
                     authType: "noAuth",
-                    scaleFactor: "1.5"
+                    scaleFactor: 1.5
                 )
         static let idfa = "01234567-1234-1234-1234-123456789012"
     }

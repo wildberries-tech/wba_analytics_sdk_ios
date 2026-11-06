@@ -94,7 +94,7 @@ private extension UserEngagementTrackerTests {
             screenName: "screenName",
             textSize: .large,
             authType: "noAuth",
-            scaleFactor: "1.5"
+            scaleFactor: 1.5
         )
         static let timerInterval = 30.0
     }

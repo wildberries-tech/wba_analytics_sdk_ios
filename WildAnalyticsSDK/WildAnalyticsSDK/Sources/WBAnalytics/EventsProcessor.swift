@@ -64,9 +64,12 @@ protocol EventsProcessor {
     /// Set device id
     func setDeviceId(_ deviceId: String?)
     /// Set a unique session value
-    func setSessionValue(_ value: String?)
+    func setSessionValue(_ value: UInt64?)
     /// Set a handler called when session value updates
-    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void)
+    /// - Parameters:
+    ///   - handler: Handler called when session value updates
+    ///   - owner: The handler's owner. One owner — one handler
+    func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void, for owner: AnyObject)
 }
 
 final class EventsProcessorImpl: EventsProcessor {
@@ -272,15 +275,21 @@ final class EventsProcessorImpl: EventsProcessor {
     }
 
     func setDeviceId(_ deviceId: String?) {
-        batchProcessor.setDeviceId(deviceId)
+        // Move the deviceId write onto the internal queue, as setCommonParameters does:
+        // assigning directly from the caller's thread races with reading deviceId
+        // in getMeta() on the WBAnalytics queue.
+        async { [weak self] in
+            guard let self else { return }
+            self.batchProcessor.setDeviceId(deviceId)
+        }
     }
 
-    func setSessionValue(_ value: String?) {
+    func setSessionValue(_ value: UInt64?) {
         sessionValueManager.setSessionValue(value)
     }
 
-    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void) {
-        sessionValueManager.setOnSessionValueUpdated(handler)
+    func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void, for owner: AnyObject) {
+        sessionValueManager.setOnSessionValueUpdated(handler, for: owner)
     }
 
     func addEvent(_ event: String, parameters: [String: Any]? = nil) {

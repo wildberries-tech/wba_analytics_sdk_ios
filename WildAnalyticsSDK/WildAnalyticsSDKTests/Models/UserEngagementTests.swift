@@ -42,7 +42,7 @@ final class UserEngagementTests: XCTestCase {
         XCTAssertEqual(dictionary?["screen_name"] as? String, TestData.screenName)
         XCTAssertEqual(dictionary?["text_size"] as? Int, TextSize.small.rawValue)
         XCTAssertEqual(dictionary?["auth_type"] as? String, TestData.authType)
-        XCTAssertEqual(dictionary?["scale_factor"] as? String, TestData.scaleFactor)
+        XCTAssertEqual(dictionary?["scale_factor"] as? Double, Double(TestData.scaleFactor))
     }
 
     func testDictionaryOmitsNilScaleFactor() {
@@ -75,18 +75,18 @@ final class UserEngagementTests: XCTestCase {
         XCTAssertEqual(dictionary?["screen_name"] as? String, TestData.screenName)
     }
 
-    func testDictionaryKeepsEmptyScaleFactor() {
-        // given an empty string is still a value, unlike nil
+    func testDictionaryKeepsZeroScaleFactor() {
+        // given zero is still a value, unlike nil
         let userEngagement = UserEngagement(
             screenName: TestData.screenName,
             textSize: nil,
             authType: nil,
-            scaleFactor: ""
+            scaleFactor: 0
         )
         // when
         let dictionary = userEngagement.dictionary
         // then
-        XCTAssertEqual(dictionary?["scale_factor"] as? String, "")
+        XCTAssertEqual(dictionary?["scale_factor"] as? Double, 0)
     }
 
     // MARK: Equatable
@@ -103,7 +103,7 @@ final class UserEngagementTests: XCTestCase {
             screenName: TestData.screenName,
             textSize: .large,
             authType: TestData.authType,
-            scaleFactor: "2.0"
+            scaleFactor: 2.0
         )
         // then
         XCTAssertNotEqual(lhs, rhs)
@@ -117,6 +117,6 @@ private extension UserEngagementTests {
     enum TestData {
         static let screenName = "screenName"
         static let authType = "noAuth"
-        static let scaleFactor = "1.5"
+        static let scaleFactor: CGFloat = 1.5
     }
 }

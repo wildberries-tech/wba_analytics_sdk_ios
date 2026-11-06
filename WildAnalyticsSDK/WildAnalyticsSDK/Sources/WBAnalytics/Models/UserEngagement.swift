@@ -2,15 +2,16 @@
 //  Copyright © 2024 WildAnalytics. All rights reserved.
 //
 
+import CoreGraphics
 import Foundation
 
 /// Data model for the `user_engagement` event
-public struct UserEngagement: Equatable {
+public struct UserEngagement: Equatable, Sendable {
 
     let screenName: String
     let textSize: TextSize?
     let authType: String?
-    let scaleFactor: String?
+    let scaleFactor: CGFloat?
 
     /// UserEngagement initializer.
     /// - Parameters:
@@ -22,7 +23,7 @@ public struct UserEngagement: Equatable {
         screenName: String,
         textSize: TextSize?,
         authType: String?,
-        scaleFactor: String?
+        scaleFactor: CGFloat?
     ) {
         self.screenName = screenName
         self.textSize = textSize
@@ -39,7 +40,7 @@ public struct UserEngagement: Equatable {
             result[.textSize] = textSize.rawValue
         }
         if let scaleFactor {
-            result[.scaleFactor] = scaleFactor
+            result[.scaleFactor] = Double(scaleFactor)
         }
         return result
     }
@@ -48,7 +49,7 @@ public struct UserEngagement: Equatable {
 // MARK: - Structures
 
 /// The preferred text size change on iOS (set in User Accessibility)
-public enum TextSize: Int {
+public enum TextSize: Int, Sendable {
     /// Standard text size
     case standard
     /// Larger text sizes

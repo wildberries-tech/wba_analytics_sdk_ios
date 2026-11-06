@@ -23,8 +23,34 @@ final class BatchSenderImpl: NSObject, BatchSender {
     private let interceptor: RequestInterceptor
     private let sessionDelegate: URLSessionDelegate?
     private var session: URLSessionProtocol?
-    private var userToken: String?
-    private var customHeaders: [String: String] = [:]
+    private let headersLock = NSLock()
+    private var _userToken: String?
+    private var userToken: String? {
+        get {
+            headersLock.lock()
+            defer { headersLock.unlock() }
+            return _userToken
+        }
+        set {
+            headersLock.lock()
+            defer { headersLock.unlock() }
+            _userToken = newValue
+        }
+    }
+
+    private var _customHeaders: [String: String] = [:]
+    private var customHeaders: [String: String] {
+        get {
+            headersLock.lock()
+            defer { headersLock.unlock() }
+            return _customHeaders
+        }
+        set {
+            headersLock.lock()
+            defer { headersLock.unlock() }
+            _customHeaders = newValue
+        }
+    }
 
     init(
         apiKey: String,

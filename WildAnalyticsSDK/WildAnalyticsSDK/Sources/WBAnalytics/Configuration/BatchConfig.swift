@@ -20,4 +20,16 @@ public struct BatchConfig: Decodable, Equatable {
         sendingTimerTimeout = 10.0
         requestTimeout = 30
     }
+
+    public init(
+        sendingDelay: Double,
+        size: Int,
+        sendingTimerTimeout: Double,
+        requestTimeout: Double
+    ) {
+        self.sendingDelay = sendingDelay
+        self.size = size
+        self.sendingTimerTimeout = sendingTimerTimeout
+        self.requestTimeout = requestTimeout
+    }
 }

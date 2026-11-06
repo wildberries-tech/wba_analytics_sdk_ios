@@ -48,11 +48,11 @@ public protocol AnalyticsReceiver {
 
     /// Sets a unique session value
     /// - Parameter value: Unique session value
-    func setSessionValue(_ value: String?)
+    func setSessionValue(_ value: UInt64?)
 
     /// Set a handler called when session value updates
     /// - Parameter handler: Handler called when session value updates
-    func setOnSessionValueUpdated(_ handler: @escaping (String?) -> Void)
+    func setOnSessionValueUpdated(_ handler: @escaping (UInt64?) -> Void)
 
     /// Tracks the URL the app was opened with — the dynamic_link_app_open event.
     /// - Parameters:

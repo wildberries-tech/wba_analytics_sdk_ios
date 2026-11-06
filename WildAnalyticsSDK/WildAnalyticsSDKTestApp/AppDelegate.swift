@@ -6,16 +6,12 @@ import WildAnalyticsSDK
 #if os(tvOS)
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    var window: UIWindow?
     static var shared: AppDelegate = UIApplication.shared.delegate as! AppDelegate
     var analytics1: WildAnalyticsSDK = WildAnalyticsSDK()
     var analytics2: WildAnalyticsSDK = WildAnalyticsSDK()
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         setupAnalytics()
-        window = UIWindow(frame: UIScreen.main.bounds)
-        window?.rootViewController = TestableViewControllerTV(testableViewIdentifier: "")
-        window?.makeKeyAndVisible()
         return true
     }
 
@@ -55,8 +51,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     static var shared: AppDelegate = UIApplication.shared.delegate as! AppDelegate
 
-    var window: UIWindow?
-
     var analytics1: WildAnalyticsSDK = WildAnalyticsSDK()
     var analytics2: WildAnalyticsSDK = WildAnalyticsSDK()
 
@@ -66,10 +60,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
 
         setupAnalytics()
-
-        window = UIWindow()
-        window?.rootViewController = TestableViewController(testableViewIdentifier: "")
-        window?.makeKeyAndVisible()
         return true
     }
 
@@ -84,6 +74,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             analyticsURL: url,
             isFirstLaunch: isFirstLaunch,
             enableAttributionTracking: true,
+            enableAutomaticEvents: true,
             loggingOptions: .init(loggingEnabled: true, logRequests: true, logToFile: true, level: .debug),
             networkTypeProvider: NetworkTypeProviderMock(),
             batchConfig: BatchConfig(),

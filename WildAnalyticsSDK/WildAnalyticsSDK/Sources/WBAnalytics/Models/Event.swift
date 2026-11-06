@@ -15,7 +15,7 @@ extension Event {
     ///   - time: The time the event occurred.
     ///   - eventNum: Event number
     ///   - sessionValue: Unique session value
-    init(name: String, data: [String: Any], time: String, eventNum: Int, sessionValue: String) {
+    init(name: String, data: [String: Any], time: String, eventNum: Int, sessionValue: UInt64) {
         self = [
             Self.nameKey: name,
             Self.dataKey: data,

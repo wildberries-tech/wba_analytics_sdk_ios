@@ -111,7 +111,7 @@ settings:
     Debug:
       CLANG_CXX_LANGUAGE_STANDARD: gnu++17
       CURRENT_PROJECT_VERSION: '1'
-      IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+      IPHONEOS_DEPLOYMENT_TARGET: '15.0'
       MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
       MTL_FAST_MATH: 'YES'
       SDKROOT: iphoneos
@@ -122,7 +122,7 @@ settings:
     Release:
       CLANG_CXX_LANGUAGE_STANDARD: gnu++17
       CURRENT_PROJECT_VERSION: '1'
-      IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+      IPHONEOS_DEPLOYMENT_TARGET: '15.0'
       MTL_FAST_MATH: 'YES'
       SDKROOT: iphoneos
       SWIFT_COMPILATION_MODE: wholemodule
@@ -160,7 +160,7 @@ targets:
           DEVELOPMENT_TEAM: 4Y4A396ZEB
           GENERATE_INFOPLIST_FILE: 'YES'
           INFOPLIST_KEY_NSHumanReadableCopyright: ''
-          IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+          IPHONEOS_DEPLOYMENT_TARGET: '15.0'
           MARKETING_VERSION: '0.0.1'
           PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
           SWIFT_EMIT_LOC_STRINGS: 'YES'
@@ -170,7 +170,7 @@ targets:
           DEVELOPMENT_TEAM: 4Y4A396ZEB
           GENERATE_INFOPLIST_FILE: 'YES'
           INFOPLIST_KEY_NSHumanReadableCopyright: ''
-          IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+          IPHONEOS_DEPLOYMENT_TARGET: '15.0'
           MARKETING_VERSION: '0.0.1'
           PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDK
           SWIFT_EMIT_LOC_STRINGS: 'YES'
@@ -215,6 +215,7 @@ targets:
           GENERATE_INFOPLIST_FILE: 'YES'
           MARKETING_VERSION: '0.0.1'
           PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
+          INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
         Release:
@@ -225,6 +226,7 @@ targets:
           GENERATE_INFOPLIST_FILE: 'YES'
           MARKETING_VERSION: '0.0.1'
           PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestApp
+          INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
     sources:
@@ -249,7 +251,7 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
-          TVOS_DEPLOYMENT_TARGET: '13.0'
+          TVOS_DEPLOYMENT_TARGET: '15.0'
           SDKROOT: appletvos
           INFOPLIST_KEY_UILaunchStoryboardName: ''
         Release:
@@ -262,7 +264,7 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: COM.WILDANALYTICS.MOBILEAPP.WildAnalyticsSDK.WildAnalyticsSDKTestAppTV
           SWIFT_EMIT_LOC_STRINGS: 'NO'
           SWIFT_VERSION: '5.0'
-          TVOS_DEPLOYMENT_TARGET: '13.0'
+          TVOS_DEPLOYMENT_TARGET: '15.0'
           SDKROOT: appletvos
           INFOPLIST_KEY_UILaunchStoryboardName: ''
     sources:

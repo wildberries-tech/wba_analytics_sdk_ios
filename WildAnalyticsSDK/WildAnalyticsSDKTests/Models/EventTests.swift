@@ -24,7 +24,7 @@ final class EventTests: XCTestCase {
         XCTAssertEqual(event[TestData.dataKey] as? [String: Int], TestData.data)
         XCTAssertEqual(event[TestData.eventTimeKey] as? String, TestData.time)
         XCTAssertEqual(event[TestData.eventNumKey] as? Int, TestData.num)
-        XCTAssertEqual(event[TestData.sessionValueKey] as? String, TestData.sessionValue)
+        XCTAssertEqual(event[TestData.sessionValueKey] as? UInt64, TestData.sessionValue)
     }
 
     // MARK: Name
@@ -43,7 +43,7 @@ private extension EventTests {
         static let name: String = "Name123"
         static let time: String = "Name321"
         static let num: Int = 1
-        static let sessionValue: String = "1587023248356386046"
+        static let sessionValue: UInt64 = 1_587_023_248_356_386_046
         static let data: [String: Int] = ["Data": 2]
         static let dataKey: String = "data"
         static let nameKey: String = "name"

@@ -14,6 +14,7 @@ final class MetaTests: XCTestCase {
             networkType: TestData.networkType,
             deviceId: TestData.deviceID,
             idfa: TestData.idfa,
+            locale: TestData.locale,
             isNewUser: TestData.isNewUser,
             enableAutomaticEvents: false
         )
@@ -33,22 +34,16 @@ final class MetaTests: XCTestCase {
             networkType: TestData.networkType,
             deviceId: TestData.deviceID,
             idfa: TestData.idfa,
+            locale: TestData.locale,
             isNewUser: TestData.isNewUser,
             enableAutomaticEvents: true,
             localDate: date
         )
         // then
-        if #available(iOS 16, *) {
-            XCTAssertEqual(
-                meta["locale"] as? String,
-                Locale.current.language.languageCode?.identifier
-            )
-        } else {
-            XCTAssertEqual(
-                meta["locale"] as? String,
-                Locale.current.languageCode
-            )
-        }
+        XCTAssertEqual(
+            meta["locale"] as? String,
+            TestData.locale
+        )
         XCTAssertEqual(
             meta["product"] as? String,
             TestData.product
@@ -133,11 +128,12 @@ private extension MetaTests {
         static let systemVersion: String = "17.2"
         static let appID: String = "com.apple.dt.xctest.tool"
         static let appVersion: String = "16.0"
-        static let analyticsSDKVersion: String = "4.0.4"
+        static let analyticsSDKVersion: String = "4.1.0"
         static let deviceType: String = "computer"
         static let manufacturer: String = "Apple"
         static let model: String = "arm64"
         static let isNewUser = true
         static let idfa = "01234567-1234-1234-1234-123456789012"
+        static let locale = "en-US"
     }
 }
